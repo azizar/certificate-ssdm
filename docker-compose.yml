@@ -1,0 +1,17 @@
+version: '3.8'
+
+services:
+  gotenberg:
+    image: gotenberg/gotenberg:8
+    command:
+      - 'gotenberg'
+      - '--api-enable-basic-auth'
+      - "--chromium-disable-javascript=true"
+      - "--chromium-allow-list=file:///tmp/.*"
+      - "--log-level=warn"
+      - "--log-format=text"
+    ports:
+      - 3100:3000
+    environment:
+      - GOTENBERG_API_BASIC_AUTH_USERNAME=convert
+      - GOTENBERG_API_BASIC_AUTH_PASSWORD=Convert123!!
