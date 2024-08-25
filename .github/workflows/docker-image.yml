@@ -47,7 +47,7 @@ jobs:
           context: .
           file: ./Dockerfile
           push: true
-          tags: certificate-generator
+          tags: ${{ secrets.DOCKERHUB_USERNAME }}/apps:certificate-generator
           labels: ${{ steps.meta.outputs.labels }}
 
       # - name: Generate artifact attestation
