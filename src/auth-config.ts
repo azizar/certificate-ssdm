@@ -9,23 +9,6 @@ import { DefaultSession } from '@auth/core/types';
 import { DefaultJWT } from '@auth/core/jwt';
 import prisma from './lib/prisma';
 
-declare module 'next-auth' {
-  /**
-   * Returned by `auth`, `useSession`, `getSession` and received as a prop on the `SessionProvider` React Context
-   */
-  interface Session {
-    user: {
-      admin: boolean;
-    } & DefaultSession['user'];
-  }
-
-  interface JWT {
-    user: {
-      admin: boolean;
-    } & DefaultJWT['user'];
-  }
-}
-
 const providers: Provider[] = [
   Resend({
     id: 'resend',

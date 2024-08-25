@@ -3,10 +3,19 @@
 import { signIn, signOut } from 'auth';
 import { AuthError } from 'next-auth';
 
-export const handleLogin = async (id: string, formData: FormData) => {
+export type FormState = {
+  message: string;
+  fields?: Record<string, string>;
+  issues?: string[];
+  errors?: any;
+  success: boolean;
+  callback?: string;
+};
+
+export const handleLogin = async (prevState: FormState, formData: FormData) => {
   console.log('form:', Object.fromEntries(formData));
   try {
-    await signIn(id, formData);
+    await signIn('google', formData);
   } catch (error) {
     console.log('message:', error?.message);
     if (error instanceof AuthError) {

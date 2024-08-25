@@ -3,17 +3,25 @@ import { google } from 'googleapis';
 import nodemailer from 'nodemailer';
 import * as process from 'node:process';
 import { join } from 'path';
+import { Person } from '.prisma/client';
 
 export default class ProceedConvertDocs {
   event: Event;
+  person: Person;
 
-  constructor(event: Event) {
+  constructor(event: Event, person: Person) {
     this.event = event;
+    this.person = person;
   }
 
   public async proceed() {
     const auth = await this.authenticate();
-    return await this.convertAndSendEmail(auth);
+    return this.convertAndSendEmail(auth);
+  }
+
+  public async convertAndStreamPdf(){
+    const auth = await this.authenticate();
+    return this.convertAndSendEmail(auth, true);
   }
 
   private async authenticate() {
@@ -29,44 +37,64 @@ export default class ProceedConvertDocs {
     });
   }
 
-  private async convertAndSendEmail(auth) {
+  private async convertAndSendEmail(auth, streamToPdf=false) {
     const drive = google.drive({ version: 'v3', auth });
+    const docs = google.docs({ version: 'v1', auth });
 
-    const driveId = '1_ip5ZS0AoYoMukSc_U-RTkqJm3m6OASy167wOcOvXFo';
+    const docsId = this.event.google_docs_id;
 
-    //2. Copy docs
+    //TODO: Check if docs by filename exist, then return
+
+    const selectedDocs = await docs.documents.get({documentId:docsId})
+
     const response = await drive.files.copy({
-      fileId: driveId,
+      fileId: selectedDocs.data.documentId,
       auth,
     });
 
     if (response.status === 200) {
-      const nameForNewFile = 'DEV_TEST_' + Date.now();
-      const newFileId = response.data.id;
+      const fileName = this.person.name + this.event.qr_code;
+      const fileId = response.data.id;
 
-      if (nameForNewFile) {
+      if (fileName) {
         try {
           await drive.files.update({
-            fileId: newFileId,
+            fileId: fileId,
             requestBody: {
-              name: nameForNewFile,
+              name: fileName,
             },
           });
 
-          const finds = ['<1>', '<2>'];
-          const replaces = ['Mutiara', 'Faradilla SP'];
+          const finds = '{person}';
+          const replaces = this.person.name;
 
-          await this.findAndReplaceTextInDoc(auth, newFileId, finds, replaces);
+          await this.findAndReplaceTextInDoc(auth, fileId, finds, replaces);
+
+          if (streamToPdf){
+            return drive.files.export(
+              {
+                fileId: fileId,
+                mimeType: 'application/pdf',
+              },
+              { responseType: 'buffer' },
+            )
+          }
 
           const resultExport = await drive.files.export(
             {
-              fileId: newFileId,
+              fileId: fileId,
               mimeType: 'application/pdf',
             },
-            { responseType: 'stream' },
+            { responseType: 'arraybuffer' },
           );
 
-          return this.sendEmail(nameForNewFile + '.pdf', resultExport.data);
+
+
+          return this.sendEmail(
+            this.person.email,
+            fileName + '.pdf',
+            resultExport.data,
+          );
         } catch (err) {
           console.log('Error processing: ', err);
         }
@@ -76,7 +104,7 @@ export default class ProceedConvertDocs {
     }
   }
 
-  private async sendEmail(filename: string, content: any) {
+  private async sendEmail(email: string, filename: string, content: any) {
     const transporter = nodemailer.createTransport({
       host: 'smtp.resend.com',
       secure: true,
@@ -89,7 +117,7 @@ export default class ProceedConvertDocs {
 
     const info = await transporter.sendMail({
       from: 'delivered@resend.dev',
-      to: 'aziez1996@gmail.com',
+      to: email,
       subject: 'Certificate',
       html: '<strong>It works!</strong>',
       attachments: [{ filename, content }],

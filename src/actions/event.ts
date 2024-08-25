@@ -14,6 +14,7 @@ import { eachDayOfInterval } from 'date-fns';
 
 import lodash from 'lodash';
 import { GenerateQueue } from '../lib/queue';
+import { auth } from '../auth';
 
 export const createEvent = async (formData: FormData) => {
   const rawFormData = Object.fromEntries(formData);
@@ -48,7 +49,7 @@ export const createEvent = async (formData: FormData) => {
         console.log({ createdFile });
       }
 
-      const event = await prisma.event.create({
+      return prisma.event.create({
         data: {
           name: body.name,
           end_date: body.end_date,
@@ -57,10 +58,9 @@ export const createEvent = async (formData: FormData) => {
           qr_code: code,
           qr_url: code,
           template_file: filename,
+          google_docs_id: body.google_docs_id,
         },
       });
-
-      return event;
     } else {
       throw parsed.error;
     }
@@ -104,6 +104,7 @@ export const updateEvent = async (eventId: number, formData: FormData) => {
       start_date: new Date(rawFormData.start_date),
       person_responsibility: rawFormData.person_responsibility,
       template_file: filename,
+      google_docs_id: rawFormData.google_docs_id,
     },
   });
 };
@@ -203,6 +204,12 @@ export const personRegisterEvent = async (
       include: { certificates: true },
     });
 
+    const session = await auth();
+
+    const user = await prisma.user.findFirstOrThrow({
+      where: { email: session.user.email },
+    });
+
     const person = await prisma.person.upsert({
       where: { identifier: payload.identifier },
       update: {
@@ -216,9 +223,9 @@ export const personRegisterEvent = async (
         identifier: payload.identifier,
         title: payload.title,
         email: payload.email,
+        userId: user.id
       },
     });
-
 
     return await prisma.eventPersonAbsence.create({
       data: {
@@ -242,9 +249,7 @@ export const generateCertificate = async (eventId, personId) => {
     await GenerateQueue.add('generate', { event, person });
 
     return 'OK';
-
   } catch (e) {
     throw e;
   }
 };
-

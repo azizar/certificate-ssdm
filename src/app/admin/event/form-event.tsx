@@ -28,6 +28,7 @@ export const FormEvent = ({
       start_date: event.start_date,
       end_date: event.end_date,
       person_responsibility: event.person_responsibility,
+      google_docs_id: event.google_docs_id,
     },
   });
 
@@ -102,6 +103,30 @@ export const FormEvent = ({
               />
               <small className="text-red-600">
                 {errors?.person_responsibility?.message}
+              </small>
+            </>
+          )}
+        /><Controller
+          control={control}
+          name="google_docs_id"
+          render={({
+            field: { onChange, onBlur, value, ref },
+            formState,
+            fieldState,
+          }) => (
+            <>
+              <Input
+                label="Google Docs Document ID "
+                variant="outlined"
+                crossOrigin={undefined}
+                error={errors?.google_docs_id ? true : false}
+                placeholder=""
+                onChange={onChange}
+                ref={ref}
+                defaultValue={value ?? ''}
+              />
+              <small className="text-red-600">
+                {errors?.google_docs_id?.message}
               </small>
             </>
           )}

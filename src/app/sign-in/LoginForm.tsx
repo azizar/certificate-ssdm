@@ -1,5 +1,6 @@
 // 'use client';
 
+'use client';
 import { handleLogin } from 'actions/authentication';
 
 import Default from 'components/auth/variants/DefaultAuthLayout';
@@ -7,20 +8,12 @@ import { FaGoogle } from 'react-icons/fa';
 import { signIn } from '../../auth';
 import { NextRequest } from 'next/server';
 import { headers } from 'next/headers';
+import { useFormState } from 'react-dom';
 
 function SignInDefault() {
-  // const searchParams = useSearchParams();
-  // const callbackUrl = searchParams.get('callbackUrl');
-  // console.log({ callbackUrl });
-  const headersList = headers();
-  const referer = headersList.get('referer');
-
-  let callbackUrl = '/';
-
-  if (referer) {
-    const request = new NextRequest(referer);
-    callbackUrl = request.nextUrl.searchParams.get('callbackUrl') || '/';
-  }
+  const [formState, formAction] = useFormState(handleLogin, {
+    message: ''
+  });
   return (
     <Default
       showBackButton={false}
@@ -129,21 +122,7 @@ function SignInDefault() {
               {/*  );*/}
               {/*})}*/}
               <div>
-                <form
-                  action={async (formData) => {
-                    'use server';
-                    console.log({ formData });
-                    await signIn('google', {
-                      redirect: true,
-                      redirectTo: callbackUrl,
-                    });
-                    // data.append('callbackUrl', callbackUrl ?? '/');
-                    // handleLogin('google', data).then((resp) =>
-                    //   console.log({ resp }),
-                    // );
-                  }}
-                  className="space-y-4"
-                >
+                <form action={formAction} className="space-y-4">
                   <div className="mb-6 flex h-[50px] w-full items-center justify-center gap-2 rounded-xl bg-lightPrimary hover:cursor-pointer dark:bg-navy-800 dark:text-white">
                     <div className="rounded-full text-xl">
                       <FaGoogle />

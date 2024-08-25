@@ -30,6 +30,7 @@ model User {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  Person    Person[]
 }
 
 model Account {
@@ -93,9 +94,11 @@ model Person {
   email      String  @unique
   name       String
   title      String?
+  userId     String
 
   EventPersonAbsence EventPersonAbsence[]
   Certificate        Certificate[]
+  User               User                 @relation(fields: [userId], references: [id])
 }
 
 model Event {
@@ -109,6 +112,7 @@ model Event {
   template_file         String?
   certificates          Certificate[]
   person_absences       EventPersonAbsence[]
+  google_docs_id        String?
 }
 
 model EventPersonAbsence {

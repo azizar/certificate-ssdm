@@ -10,12 +10,14 @@ import {
   Dialog,
   DialogBody,
   DialogHeader,
+  IconButton,
   Typography,
 } from '@material-tailwind/react';
 import {
   createColumnHelper,
   flexRender,
   getCoreRowModel,
+  getPaginationRowModel,
   getSortedRowModel,
   SortingState,
   useReactTable,
@@ -23,10 +25,18 @@ import {
 import { getEventList } from 'actions/event';
 import { Event } from 'lib/schema/event';
 import { usePathname, useRouter } from 'next/navigation';
-import { FaEdit, FaPlus, FaQrcode } from 'react-icons/fa';
+import {
+  FaArrowAltCircleLeft,
+  FaArrowLeft,
+  FaArrowRight,
+  FaEdit,
+  FaPlus,
+  FaQrcode,
+} from 'react-icons/fa';
 import { FiLoader } from 'react-icons/fi';
 import { useQuery } from 'react-query';
 import { FormEvent } from './form-event';
+import { BiLeftArrow, BiRightArrow } from 'react-icons/bi';
 
 type RowObj = {
   id: number;
@@ -41,19 +51,25 @@ type RowObj = {
 
 const columnHelper = createColumnHelper<RowObj>();
 
-function AdminEventTable() {
-  const [openDialog, handleOpenDialog] = useState(false);
-
+function AdminEventTable({ events: data }: { events: RowObj[] }) {
   const router = useRouter();
   const pathname = usePathname();
 
+  console.log(window.location);
+
+  const [openDialog, handleOpenDialog] = useState(false);
   const [sorting, setSorting] = React.useState<SortingState>([]);
-  const { data, isFetching, refetch, error } = useQuery({
-    queryFn: async () => {
-      return await getEventList();
-    },
-    queryKey: ['certificate-table'],
+  const [pagination, setPagination] = useState({
+    pageIndex: 0, //initial page index
+    pageSize: 10, //default page size
   });
+
+  // const { data, isFetching, refetch, error } = useQuery({
+  //   queryFn: async () => {
+  //     return await getEventList();
+  //   },
+  //   queryKey: ['certificate-table'],
+  // });
 
   const { SVG, Image } = useQRCode();
 
@@ -64,7 +80,9 @@ function AdminEventTable() {
     columnHelper.accessor('name', {
       id: 'name',
       header: () => (
-        <p className="text-sm font-bold text-gray-600 dark:text-white flex gap-4">NAME</p>
+        <p className="flex gap-4 text-sm font-bold text-gray-600 dark:text-white">
+          NAME
+        </p>
       ),
       cell: (info) => (
         <p className="text-sm font-bold text-navy-700 dark:text-white">
@@ -173,26 +191,24 @@ function AdminEventTable() {
   ];
 
   const table = useReactTable({
-    data,
+    data: data,
     columns,
     state: {
       sorting,
+      pagination,
     },
     onSortingChange: setSorting,
     getCoreRowModel: getCoreRowModel(),
     getSortedRowModel: getSortedRowModel(),
-    debugTable: true,
+    getPaginationRowModel: getPaginationRowModel(),
+    debugAll: true,
   });
 
-  if (isFetching) {
-    return <FiLoader className="mx-auto mt-8 size-6 animate-spin" />;
-  }
+  // if (error) {
+  //   return <pre>{JSON.stringify(error)}</pre>;
+  // }
 
-  if (error) {
-    return <pre>{JSON.stringify(error)}</pre>;
-  }
-
-  console.log({ data });
+  console.log(data.length && table.getRowModel());
 
   return (
     <>
@@ -210,7 +226,7 @@ function AdminEventTable() {
           <FormEvent
             event={{}}
             onSuccess={(data) => {
-              refetch();
+              // refetch();
               handleOpenDialog(!openDialog);
               console.log('onSuccess: ', { data });
             }}
@@ -231,14 +247,14 @@ function AdminEventTable() {
         <DialogBody>
           <div className="flex justify-center">
             <Image
-              text={`${process.env.NEXT_PUBLIC_HOST}/event/register/${selectedData?.qr_code}`}
+              text={`${window.location.origin}/event/register/${selectedData?.qr_code}`}
               options={{
                 type: 'image/jpeg',
                 quality: 1,
                 errorCorrectionLevel: 'L',
                 margin: 3,
                 scale: 4,
-                width: 400,
+                width: 600,
                 color: {
                   dark: '#010599FF',
                   light: '#FFBF60FF',
@@ -268,7 +284,7 @@ function AdminEventTable() {
           </div>
         </div>
 
-        <div className="mt-8 overflow-x-scroll xl:overflow-x-hidden">
+        <div className="mt-8 w-full overflow-x-scroll xl:overflow-x-hidden">
           <table className="w-full">
             <thead>
               {table.getHeaderGroups().map((headerGroup) => (
@@ -301,8 +317,7 @@ function AdminEventTable() {
               ))}
             </thead>
             <tbody>
-              {!isFetching &&
-                table.getRowModel().rows.length >= 1 &&
+              {data.length >= 1 &&
                 table.getRowModel().rows.map((row) => {
                   return (
                     <tr key={row.id}>
@@ -323,7 +338,74 @@ function AdminEventTable() {
                   );
                 })}
             </tbody>
+            {/*<div>*/}
+            {/*  <Button*/}
+            {/*    onClick={() => table.firstPage()}*/}
+            {/*    disabled={!table.getCanPreviousPage()}*/}
+            {/*  >*/}
+            {/*    {'<<'}*/}
+            {/*  </Button>*/}
+            {/*  <Button*/}
+            {/*    onClick={() => table.previousPage()}*/}
+            {/*    disabled={!table.getCanPreviousPage()}*/}
+            {/*  >*/}
+            {/*    {'<'}*/}
+            {/*  </Button>*/}
+            {/*  <Button*/}
+            {/*    onClick={() => table.nextPage()}*/}
+            {/*    disabled={!table.getCanNextPage()}*/}
+            {/*  >*/}
+            {/*    {'>'}*/}
+            {/*  </Button>*/}
+            {/*  <Button*/}
+            {/*    onClick={() => table.lastPage()}*/}
+            {/*    disabled={!table.getCanNextPage()}*/}
+            {/*  >*/}
+            {/*    {'>>'}*/}
+            {/*  </Button>*/}
+            {/*  <select*/}
+            {/*    value={table.getState().pagination.pageSize}*/}
+            {/*    onChange={(e) => {*/}
+            {/*      table.setPageSize(Number(e.target.value));*/}
+            {/*    }}*/}
+            {/*  >*/}
+            {/*    {[10, 20, 30, 40, 50].map((pageSize) => (*/}
+            {/*      <option key={pageSize} value={pageSize}>*/}
+            {/*        {pageSize}*/}
+            {/*      </option>*/}
+            {/*    ))}*/}
+            {/*  </select>*/}
+            {/*</div>*/}
           </table>
+          {data.length >= 1 && (
+            <div className="mx-auto flex items-center gap-4 justify-center">
+              <Button
+                variant="text"
+                className="flex items-center gap-2"
+                onClick={() => table.previousPage()}
+                disabled={!table.getCanPreviousPage()}
+              >
+                <FaArrowLeft strokeWidth={2} className="h-4 w-4" /> Previous
+              </Button>
+              <div className="flex items-center gap-2">
+                <Typography>
+                  {table.getState().pagination.pageIndex + 1}
+                </Typography>
+              </div>
+              <Button
+                variant="text"
+                className="flex items-center gap-2"
+                onClick={() => table.nextPage()}
+                disabled={!table.getCanNextPage()}
+              >
+                Next
+                <FaArrowRight strokeWidth={2} className="h-4 w-4" />
+              </Button>
+            </div>
+          )}
+          {data.length === 0 && (
+            <Typography className={'mt-4'}>No Result.</Typography>
+          )}
         </div>
       </Card>
     </>

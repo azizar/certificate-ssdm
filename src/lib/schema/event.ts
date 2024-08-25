@@ -8,6 +8,7 @@ export const EventSchema = z.object({
   person_responsibility: z.string().min(1),
   qr_code: z.string().optional(),
   qr_url: z.string().optional(),
+  google_docs_id: z.string().optional(),
   cert_template:
     typeof window === 'undefined' ? z.any() : z.instanceof(File).optional(),
 });
