@@ -8,7 +8,7 @@ WORKDIR /app
 
 # Install dependencies based on the preferred package manager
 COPY package.json ./
-RUN npm ci
+RUN npm ci;
 #\
 #    if [ -f yarn.lock ]; then yarn --frozen-lockfile; \
 #    elif [ -f package-lock.json ]; then npm ci; \
@@ -28,7 +28,7 @@ COPY . .
 # Uncomment the following line in case you want to disable telemetry during the build.
 # ENV NEXT_TELEMETRY_DISABLED 1
 
-RUN npm run build
+RUN npm run build;
 #\
 #    if [ -f yarn.lock ]; then yarn run build; \
 #    elif [ -f package-lock.json ]; then npm run build; \
