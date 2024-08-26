@@ -1,5 +1,6 @@
 /* eslint-disable */
 
+//@ts-nocheck
 import { HiX } from 'react-icons/hi';
 import Links from './components/Links';
 

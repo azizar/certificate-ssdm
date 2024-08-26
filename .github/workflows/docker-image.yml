@@ -49,6 +49,9 @@ jobs:
           push: true
           tags: araziz/apps:certificate-generator
           labels: ${{ steps.meta.outputs.labels }}
+          build-args: |
+            "ARG_DATABASE_URL=${{ secrets.DATABSE_URL }}"
+            "ARG_NEXTAUTH_URL=${{ secrets.AUTH_URL }}"
 
       # - name: Generate artifact attestation
       #   uses: actions/attest-build-provenance@v1

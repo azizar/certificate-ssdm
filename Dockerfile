@@ -1,71 +1,84 @@
-FROM node:20-alpine AS base
 
-# Install dependencies only when needed
-FROM base AS deps
-# Check https://github.com/nodejs/docker-node/tree/b4117f9333da4138b03a546ec926ef50a31506c3#nodealpine to understand why libc6-compat might be needed.
-RUN apk add --no-cache libc6-compat
+ARG BASE=node:20-alpine
+
+FROM ${BASE} AS dependencies
+
+RUN apk update \
+	&& apk add --no-cache openssl curl libc6-compat \
+	&& rm -rf /var/lib/apt/lists/* \
+	&& rm -rf /var/cache/apk/*
+
+RUN openssl version && curl --version
+RUN curl -sf https://gobinaries.com/tj/node-prune | sh
+
 WORKDIR /app
+COPY package.json yarn.lock ./
+COPY prisma ./prisma
 
-# Install dependencies based on the preferred package manager
-COPY package.json yarn.lock* package-lock.json* pnpm-lock.yaml* ./
-RUN \
-    if [ -f yarn.lock ]; then yarn --frozen-lockfile; \
-    elif [ -f package-lock.json ]; then npm ci; \
-    elif [ -f pnpm-lock.yaml ]; then corepack enable pnpm && pnpm i --frozen-lockfile; \
-    else echo "Lockfile not found." && exit 1; \
-    fi
+RUN yarn install --production=true --frozen-lockfile --ignore-scripts \
+    && npx prisma generate \
+    && node-prune \
+    && cp -R node_modules prod_node_modules \
+    && yarn install --production=false --prefer-offline \
+    && npx prisma generate \
+    && rm -rf prisma \
+    && yarn cache clean
 
-ENV POSTGRE_URL ''
-
-RUN npx prisma generate 
+#------ target bulider
 
 # Rebuild the source code only when needed
-FROM base AS builder
+FROM ${BASE} AS builder
 WORKDIR /app
-COPY --from=deps /app/node_modules ./node_modules
+
 COPY . .
+COPY --from=dependencies /app/node_modules ./node_modules
 
-# Next.js collects completely anonymous telemetry data about general usage.
-# Learn more here: https://nextjs.org/telemetry
-# Uncomment the following line in case you want to disable telemetry during the build.
-# ENV NEXT_TELEMETRY_DISABLED 1
+# only for SSG pages
+ARG ARG_DATABASE_URL
+ENV DATABASE_URL=$ARG_DATABASE_URL
 
-RUN \
-    if [ -f yarn.lock ]; then yarn run build; \
-    elif [ -f package-lock.json ]; then npm run build; \
-    elif [ -f pnpm-lock.yaml ]; then corepack enable pnpm && pnpm run build; \
-    else echo "Lockfile not found." && exit 1; \
-    fi
+ARG ARG_AUTH_URL
+ENV AUTH_URL=$ARG_AUTH_URL
+
+# debug
+RUN echo "DATABASE_URL=$DATABASE_URL"
+RUN echo "AUTH_URL=$AUTH_URL"
+
+# ENV DEBUG=*
+
+# npx prisma migrate deploy && npx prisma db seed - not needed
+# connect to existing db with data
+# build reads DATABASE_URL env, and needs dev dependencies
+RUN yarn build && rm -rf node_modules
+
+#------ target production
 
 # Production image, copy all the files and run next
-FROM base AS runner
+FROM ${BASE} AS production
 WORKDIR /app
 
 ENV NODE_ENV production
-#COPY .env .env
-# Uncomment the following line in case you want to disable telemetry during runtime.
-# ENV NEXT_TELEMETRY_DISABLED 1
 
-RUN addgroup --system --gid 1001 nodejs
-RUN adduser --system --uid 1001 nextjs
-
+COPY --from=builder /app/next.config.js ./
 COPY --from=builder /app/public ./public
+COPY --from=builder /app/package.json ./package.json
+COPY --from=dependencies /app/prod_node_modules ./node_modules
+COPY --from=builder --chown=node:node /app/.next ./.next
+# use schema from container
+COPY --from=builder --chown=node:node /app/prisma ./prisma
 
-# Set the correct permission for prerender cache
-RUN mkdir .next
-RUN chown nextjs:nodejs .next
+# volumes
+COPY --from=builder --chown=node:node /app/uploads ./uploads
 
-# Automatically leverage output traces to reduce image size
-# https://nextjs.org/docs/advanced-features/output-file-tracing
-COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
-COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
+# in command in d-c.yml
+RUN chmod 766 -R uploads
 
-USER nextjs
+USER node
 
 EXPOSE 3000
-
 ENV PORT 3000
 
-# server.js is created by next build from the standalone output
-# https://nextjs.org/docs/pages/api-reference/next-config-js/output
-CMD HOSTNAME="0.0.0.0" node server.js
+ENV NEXT_TELEMETRY_DISABLED 1
+
+# run migrate and seed here
+CMD ["yarn", "start"]
