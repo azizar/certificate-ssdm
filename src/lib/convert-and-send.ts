@@ -76,7 +76,7 @@ export default class ProceedConvertDocs {
                 fileId: fileId,
                 mimeType: 'application/pdf',
               },
-              { responseType: 'buffer' },
+              { responseType: 'arraybuffer' },
             )
           }
 
@@ -85,7 +85,7 @@ export default class ProceedConvertDocs {
               fileId: fileId,
               mimeType: 'application/pdf',
             },
-            { responseType: 'arraybuffer' },
+            { responseType: 'stream' },
           );
 
 

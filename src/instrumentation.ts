@@ -92,8 +92,6 @@ export const register = async () => {
 
       const existPdf = existsSync(resultPDf);
 
-      console.log({ existPdf });
-
       console.log({
         from: 'delivered@resend.dev',
         to: 'aziez1996@gmail.com',

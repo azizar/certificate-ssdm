@@ -6,7 +6,6 @@ export async function POST(
   { params }: { params: { eventId: string } },
 ) {
   const body = await request.json();
-  console.log({ body });
 
   const personId = body.personId;
   const event = await prisma.event.findFirstOrThrow({
@@ -20,7 +19,6 @@ export async function POST(
     },
   });
 
-  console.log({ event });
   //
   // const processor = new ProceedConvertDocs(event);
   //
