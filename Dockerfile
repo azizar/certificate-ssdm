@@ -15,6 +15,9 @@ RUN \
     else echo "Lockfile not found." && exit 1; \
     fi
 
+ENV POSTGRE_URL ''
+
+RUN npx prisma generate 
 
 # Rebuild the source code only when needed
 FROM base AS builder
@@ -28,9 +31,9 @@ COPY . .
 # ENV NEXT_TELEMETRY_DISABLED 1
 
 RUN \
-    if [ -f yarn.lock ]; then yarn prisma generate && yarn run build; \
-    elif [ -f package-lock.json ]; then npx prisma generate && npm run build; \
-    elif [ -f pnpm-lock.yaml ]; then corepack enable pnpm && pnpm prisma generate && pnpm run build; \
+    if [ -f yarn.lock ]; then yarn run build; \
+    elif [ -f package-lock.json ]; then npm run build; \
+    elif [ -f pnpm-lock.yaml ]; then corepack enable pnpm && pnpm run build; \
     else echo "Lockfile not found." && exit 1; \
     fi
 
