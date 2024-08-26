@@ -8,7 +8,7 @@
 //   '@fullcalendar/react',
 
 const nextConfig = {
-  output: "standalone",
+  output: 'standalone',
   swcMinify: true,
   basePath: process.env.NEXT_PUBLIC_BASE_PATH,
   assetPrefix: process.env.NEXT_PUBLIC_BASE_PATH,
@@ -20,9 +20,6 @@ const nextConfig = {
     ],
     // Make ENV
     unoptimized: true,
-  },
-  experimental: {
-    instrumentationHook: true,
   },
 };
 
