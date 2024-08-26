@@ -1,19 +1,14 @@
 'use server';
-import { mkdir, mkdirSync, readFileSync, writeFile, writeFileSync } from 'fs';
+import { mkdirSync, writeFileSync } from 'fs';
 import { Event, EventRegister, EventSchema } from 'lib/schema/event';
 import { join, resolve } from 'path';
 import { generateRandomString } from 'utils';
 
-import Docxtemplater from 'docxtemplater';
-import PizZip from 'pizzip';
-
 import prisma from 'lib/prisma';
 
-import { LibreOfficeFileConverter } from 'libreoffice-file-converter';
 import { eachDayOfInterval } from 'date-fns';
 
 import lodash from 'lodash';
-import { GenerateQueue } from '../lib/queue';
 import { auth } from '../auth';
 
 export const createEvent = async (formData: FormData) => {
@@ -223,7 +218,7 @@ export const personRegisterEvent = async (
         identifier: payload.identifier,
         title: payload.title,
         email: payload.email,
-        userId: user.id
+        userId: user.id,
       },
     });
 
@@ -245,8 +240,6 @@ export const generateCertificate = async (eventId, personId) => {
       await prisma.event.findFirst({ where: { id: eventId } }),
       await prisma.person.findFirst({ where: { id: personId } }),
     ]);
-
-    await GenerateQueue.add('generate', { event, person });
 
     return 'OK';
   } catch (e) {
