@@ -22,6 +22,8 @@ jobs:
         run: |
           echo ${{secrets.ENV_FILES}} > .env
           echo .env
+      - name: Install Yarn 👨🏻‍💻
+        run: npm i -g yarn
       - name: Install dependencies 👨🏻‍💻
         run: yarn ci
       - name: Build for production 🏗️
