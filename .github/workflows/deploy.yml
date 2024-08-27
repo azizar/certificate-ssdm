@@ -25,7 +25,7 @@ jobs:
       - name: Install Yarn 👨🏻‍💻
         run: npm i -g yarn
       - name: Install dependencies 👨🏻‍💻
-        run: yarn install --production=true --frozen-lockfile --ignore-scripts
+        run: yarn install
       - name: Install Prisma 👨🏻‍💻
         run: yarn prisma generate
       - name: Build for production 🏗️
