@@ -1,48 +1,37 @@
-# This workflow will do a clean install of node dependencies, build the source code and run tests across different versions of node
-# For more information see: https://help.github.com/actions/language-and-framework-guides/using-nodejs-with-github-actions
-
-name: Node.js CI
+name: Deploy
 
 on:
   push:
-    branches: [feature/live-preview]
+    branches:
+      - main
+      - master
   pull_request:
-    branches: [feature/live-preview]
-
+    branches:
+      - main
+      - master
 jobs:
-  build:
+  production:
     runs-on: ubuntu-latest
-
-    strategy:
-      matrix:
-        node-version: [14.x]
-
+    environment:
+      name: production
+      url: https://certificate-ssdmpolri.my.id
     steps:
-      - name: Set Actions Allow Unsecure Commands
+      - name: Checkout 🛎
+        uses: actions/checkout@master
+      - name: Install dependencies 👨🏻‍💻
+        run: npm i
+      - name: Build for production 🏗️
+        run: npm run build
+      - name: Setup SSH
         run: |
-          echo "ACTIONS_ALLOW_UNSECURE_COMMANDS=true" >> $GITHUB_ENV
-
-      - uses: actions/checkout@v2
-      - name: Use Node.js ${{ matrix.node-version }}
-        uses: actions/setup-node@v1
-        with:
-          node-version: ${{ matrix.node-version }}
-
-      - name: Installing my packages
-        run: yarn install
-
-      - name: Build my App
-        run: yarn build
-        env:
-          NEXT_PUBLIC_BASE_PATH: /chakra-nextjs-pro
-      - run: yarn export
-        env:
-          NEXT_PUBLIC_BASE_PATH: /chakra-nextjs-pro
-      - run: touch ./out/.nojekyll
-
-      - name: Deploy 🚀
-        uses: JamesIves/github-pages-deploy-action@3.5.9
-        with:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          BRANCH: gh-pages
-          FOLDER: out
+          mkdir -p ~/.ssh/
+          echo "${{ secrets.SSH_PRIV_KEY }}" > ~/.ssh/id_rsa
+          echo "${{ secrets.SSH_PUB_KEY }}" > ~/.ssh/id_rsa.pub
+          chmod 600 ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa.pub
+          ssh-keyscan -H ${{ secrets.IP }} >> ~/.ssh/known_hosts
+      - name: copy builds to server
+        run: |
+          # rsync -vrm  .next/* ${{ secrets.USER_IP }}:/home/anisrahmatulaziz/app
+          # ssh ${{ secrets.USER_IP }} "pm2 restart ecosystem.config.js"
+          pwd
