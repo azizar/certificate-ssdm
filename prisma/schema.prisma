@@ -10,10 +10,8 @@ datasource db {
 }
 
 generator client {
-  provider   = "prisma-client-js"
-  // previewFeatures = ["driverAdapters"]
-  engineType = "library"
-  // binaryTargets = ["native", "linux-musl", "linux-musl-openssl"]
+  provider = "prisma-client-js"
+  // engineType = "library"
 }
 
 model User {
@@ -121,16 +119,16 @@ model EventPersonAbsence {
   absenceDate DateTime
   eventId     Int
   personId    Int
-  event       Event    @relation(fields: [eventId], references: [id], onDelete: NoAction)
-  person      Person   @relation(fields: [personId], references: [id], onDelete: NoAction)
+  event       Event    @relation(fields: [eventId], references: [id])
+  person      Person   @relation(fields: [personId], references: [id])
 }
 
 model Certificate {
   id       Int     @id @default(autoincrement())
   eventId  Int
   personId Int
-  event    Event   @relation(fields: [eventId], references: [id], onDelete: NoAction)
-  person   Person  @relation(fields: [personId], references: [id], onDelete: NoAction)
+  event    Event   @relation(fields: [eventId], references: [id])
+  person   Person  @relation(fields: [personId], references: [id])
   status   String?
   cert_url String?
 }

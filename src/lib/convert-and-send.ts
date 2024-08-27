@@ -76,7 +76,7 @@ export default class ProceedConvertDocs {
                 fileId: fileId,
                 mimeType: 'application/pdf',
               },
-              { responseType: 'arraybuffer' },
+              { responseType: 'blob' },
             )
           }
 

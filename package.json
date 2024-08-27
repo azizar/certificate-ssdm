@@ -67,7 +67,7 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "start:prod": "NODE_ENV=production node dist/index.js",
+    "start:prod": "yarn build && yarn start",
     "export": "next export",
     "lint": "next lint",
     "worker:dev:start": "dotenv -e .env.development -- npx tsx --watch src/workers/*.worker.ts",
