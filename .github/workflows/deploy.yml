@@ -18,10 +18,18 @@ jobs:
     steps:
       - name: Checkout 🛎
         uses: actions/checkout@master
+      - name: Check Environment 🛎
+        run: |
+          echo ${{secrets.ENV_FILES}} > .env
+          echo .env
+      - name: Install Yarn 👨🏻‍💻
+        run: npm i -g yarn
       - name: Install dependencies 👨🏻‍💻
-        run: npm i
+        run: yarn install
+      - name: Install Prisma 👨🏻‍💻
+        run: yarn prisma generate
       - name: Build for production 🏗️
-        run: npm run build
+        run: DATABASE_URL=${{secrets.ARG_DATABASE_URL}} yarn build
       - name: Setup SSH
         run: |
           mkdir -p ~/.ssh/
@@ -32,5 +40,6 @@ jobs:
           ssh-keyscan -H ${{ secrets.IP }} >> ~/.ssh/known_hosts
       - name: copy builds to server
         run: |
-          rsync -vrm  .output/* ${{ secrets.USER_IP }}:/var/www/example.com/
-          ssh ${{ secrets.USER_IP }} "pm2 restart ecosystem.config.js"
+          # rsync -vrm  .next/* ${{ secrets.USER_IP }}:/home/anisrahmatulaziz/app
+          # ssh ${{ secrets.USER_IP }} "pm2 restart ecosystem.config.js"
+          pwd

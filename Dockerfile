@@ -68,10 +68,10 @@ COPY --from=builder --chown=node:node /app/.next ./.next
 COPY --from=builder --chown=node:node /app/prisma ./prisma
 
 # volumes
-COPY --from=builder --chown=node:node /app/uploads ./uploads
+# COPY --from=builder --chown=node:node /app/uploads ./uploads
 
 # in command in d-c.yml
-RUN chmod 766 -R uploads
+# RUN chmod 766 -R uploads
 
 USER node
 
