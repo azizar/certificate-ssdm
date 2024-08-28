@@ -4,9 +4,25 @@ import { google } from 'googleapis';
 import process from 'node:process';
 import prisma from '../lib/prisma';
 import ProceedConvertDocs from '../lib/convert-and-send';
+import { auth } from '../auth';
+import { Simulate } from 'react-dom/test-utils';
+import wheel = Simulate.wheel;
 
 export const certificateList = async () => {
   return prisma.certificate.findMany();
+};
+
+export const certificateListPerson = async (email: string) => {
+  const person = await prisma.person.findFirst({
+    where: { email: email },
+  });
+
+  console.log(person);
+
+  return prisma.certificate.findMany({
+    where: { personId: person.id },
+    include: { person: true, event: true },
+  });
 };
 
 export const testGenerate = async (eventId: string, personId) => {

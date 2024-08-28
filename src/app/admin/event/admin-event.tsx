@@ -55,8 +55,6 @@ function AdminEventTable({ events: data }: { events: RowObj[] }) {
   const router = useRouter();
   const pathname = usePathname();
 
-  console.log(window.location);
-
   const [openDialog, handleOpenDialog] = useState(false);
   const [sorting, setSorting] = React.useState<SortingState>([]);
   const [pagination, setPagination] = useState({
