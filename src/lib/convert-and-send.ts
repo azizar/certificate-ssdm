@@ -2,8 +2,10 @@ import { Event } from 'lib/schema/event';
 import { google } from 'googleapis';
 import nodemailer from 'nodemailer';
 import * as process from 'node:process';
-import { join } from 'path';
+import { join, resolve } from 'path';
 import { Person } from '.prisma/client';
+import { GaxiosPromise } from 'gaxios';
+import { writeFileSync, mkdirSync, createWriteStream, existsSync } from 'fs';
 
 export default class ProceedConvertDocs {
   event: Event;
@@ -19,9 +21,75 @@ export default class ProceedConvertDocs {
     return this.convertAndSendEmail(auth);
   }
 
-  public async convertAndStreamPdf(){
+  public async getAuth() {
+    return await this.authenticate();
+  }
+
+  public async convertAndSavePdf(): Promise<string> {
     const auth = await this.authenticate();
-    return this.convertAndSendEmail(auth, true);
+
+    const drive = google.drive({ version: 'v3', auth });
+    const docs = google.docs({ version: 'v1', auth });
+
+    const docsId = this.event.google_docs_id;
+
+    //TODO: Check if docs by filename exist, then return
+
+    const selectedDocs = await docs.documents.get({ documentId: docsId });
+
+    const response = await drive.files.copy({
+      fileId: selectedDocs.data.documentId,
+      auth,
+    });
+    const fileId = response.data.id;
+
+    try {
+      const fileName = this.person.email + '_' + this.event.qr_code;
+
+      await drive.files.update({
+        fileId: fileId,
+        requestBody: {
+          name: fileName,
+        },
+      });
+
+      const finds = '{person}';
+      const replaces = this.person.name;
+
+      await this.findAndReplaceTextInDoc(auth, fileId, finds, replaces);
+
+      const response = await drive.files.export(
+        {
+          fileId: fileId,
+          mimeType: 'application/pdf',
+        },
+        { responseType: 'stream' },
+      );
+
+      const destPath = join(process.cwd(), 'certificates', this.event.qr_code);
+
+      if (!existsSync(destPath)) {
+        await mkdirSync(resolve(destPath), { recursive: true });
+      }
+
+      const ext = '.pdf';
+
+      const filePath = destPath.toString() + '/' + fileName + ext;
+
+      const dest = createWriteStream(filePath);
+
+      await new Promise((resolve, reject) => {
+        response.data
+          .on('error', reject)
+          .pipe(dest)
+          .on('error', reject)
+          .on('finish', resolve);
+      });
+
+      return filePath;
+    } catch (err) {
+      console.log('Error processing: ', err);
+    }
   }
 
   private async authenticate() {
@@ -37,7 +105,7 @@ export default class ProceedConvertDocs {
     });
   }
 
-  private async convertAndSendEmail(auth, streamToPdf=false) {
+  private async convertAndSendEmail(auth, streamToPdf = false) {
     const drive = google.drive({ version: 'v3', auth });
     const docs = google.docs({ version: 'v1', auth });
 
@@ -45,7 +113,7 @@ export default class ProceedConvertDocs {
 
     //TODO: Check if docs by filename exist, then return
 
-    const selectedDocs = await docs.documents.get({documentId:docsId})
+    const selectedDocs = await docs.documents.get({ documentId: docsId });
 
     const response = await drive.files.copy({
       fileId: selectedDocs.data.documentId,
@@ -53,7 +121,7 @@ export default class ProceedConvertDocs {
     });
 
     if (response.status === 200) {
-      const fileName = this.person.name + this.event.qr_code;
+      const fileName = this.person.id + '_' + this.event.qr_code;
       const fileId = response.data.id;
 
       if (fileName) {
@@ -70,14 +138,14 @@ export default class ProceedConvertDocs {
 
           await this.findAndReplaceTextInDoc(auth, fileId, finds, replaces);
 
-          if (streamToPdf){
+          if (streamToPdf) {
             return drive.files.export(
               {
                 fileId: fileId,
                 mimeType: 'application/pdf',
               },
               { responseType: 'blob' },
-            )
+            );
           }
 
           const resultExport = await drive.files.export(
@@ -87,8 +155,6 @@ export default class ProceedConvertDocs {
             },
             { responseType: 'stream' },
           );
-
-
 
           return this.sendEmail(
             this.person.email,

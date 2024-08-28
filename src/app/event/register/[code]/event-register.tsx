@@ -27,6 +27,10 @@ function EventRegister({ event }: { event: Event }) {
       title: '',
       email: session.data?.user?.email || '',
     },
+    values: {
+      identifier: session.data?.user?.email || '',
+      email: session.data?.user?.email || '',
+    },
   });
 
   const [success, setSuccess] = useState(false);
@@ -41,24 +45,24 @@ function EventRegister({ event }: { event: Event }) {
   const onSubmit = async (data: EventRegister) => {
     registerMutation.mutate(data, {
       onError(error, variables, context) {
-        alert(error);
+        console.error(error);
+        alert('Absensi gagal !');
       },
       onSuccess(data, variables, context) {
-        alert('Success !');
+        alert('Absensi sukses.');
         setSuccess(true);
       },
     });
   };
 
-  console.log(errors);
-
   return (
     <Default
       showBackButton={false}
       maincard={
-        <div className={'flex flex-col justify-center items-center min-h-screen'}>
-          <div
-            className="m-16 flex h-full w-full items-center justify-center px-2 md:mx-0 md:px-0 lg:mb-10 lg:items-center lg:justify-start">
+        <div
+          className={'flex min-h-screen flex-col items-center justify-center'}
+        >
+          <div className="m-16 flex h-full w-full items-center justify-center px-2 md:mx-0 md:px-0 lg:mb-10 lg:items-center lg:justify-start">
             {/* Sign in section */}
             <div className=" w-full max-w-full flex-col items-center md:pl-4 lg:pl-0 xl:max-w-[420px]">
               <h3 className="mb-2.5 text-4xl font-bold text-navy-700 dark:text-white">
@@ -111,7 +115,9 @@ function EventRegister({ event }: { event: Event }) {
                       icon={<MdWarning />}
                       className="items-center"
                     >
-                      <Typography variant="h6">Event Telah Berakhir.</Typography>
+                      <Typography variant="h6">
+                        Event Telah Berakhir.
+                      </Typography>
                     </Alert>
                   ) : (
                     <div className="space-y-4">
@@ -169,10 +175,10 @@ function EventRegister({ event }: { event: Event }) {
                           control={control}
                           name="full_name"
                           render={({
-                                     field: { onChange, onBlur, value, ref },
-                                     formState,
-                                     fieldState,
-                                   }) => (
+                            field: { onChange, onBlur, value, ref },
+                            formState,
+                            fieldState,
+                          }) => (
                             <>
                               <InputField
                                 id="full_name"
@@ -180,7 +186,9 @@ function EventRegister({ event }: { event: Event }) {
                                 placeholder="John Doe"
                                 variant="auth"
                                 onChange={onChange}
-                                state={errors?.full_name?.message ? 'error' : ''}
+                                state={
+                                  errors?.full_name?.message ? 'error' : ''
+                                }
                               />
                               <small className="text-red-600">
                                 {errors?.full_name?.message}
@@ -192,10 +200,10 @@ function EventRegister({ event }: { event: Event }) {
                           control={control}
                           name="title"
                           render={({
-                                     field: { onChange, onBlur, value, ref },
-                                     formState,
-                                     fieldState,
-                                   }) => (
+                            field: { onChange, onBlur, value, ref },
+                            formState,
+                            fieldState,
+                          }) => (
                             <>
                               <InputField
                                 id="gelar"

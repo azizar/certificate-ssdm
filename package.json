@@ -71,7 +71,7 @@
     "export": "next export",
     "lint": "next lint",
     "worker:dev:start": "dotenv -e .env.development -- npx tsx --watch src/workers/*.worker.ts",
-    "worker:start": "dotenvx -e .env -- npx tsx --watch src/workers/*.worker.ts",
+    "worker:start": "dotenv -e .env -- npx tsx --watch src/worker/generate-certificate.worker.ts",
     "dev:net": "node --experimental-modules start-dev.mjs"
   },
   "eslintConfig": {

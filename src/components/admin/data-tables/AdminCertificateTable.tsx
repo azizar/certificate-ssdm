@@ -1,8 +1,8 @@
+//@ts-nocheck
 import Card from 'components/card';
 import CardMenu from 'components/card/CardMenu';
-import Progress from 'components/progress';
+
 import React from 'react';
-import { MdCancel, MdCheckCircle, MdOutlineError } from 'react-icons/md';
 
 import { Button } from '@material-tailwind/react';
 import {
@@ -15,42 +15,34 @@ import {
 } from '@tanstack/react-table';
 import { FiLoader } from 'react-icons/fi';
 import { useQuery } from 'react-query';
+import { certificateList } from '../../../actions/certificate';
 
-type RowObj = {
-  name: string;
-  status: string;
-  date: string;
-  progress: number;
+import { Event, Person } from '.prisma/client';
+
+type CertificateTableRow = {
+  id: number;
+  cert_url: string;
+  event: Event;
+  person: Person;
 };
 
-const columnHelper = createColumnHelper<RowObj>();
+const columnHelper = createColumnHelper<CertificateTableRow>();
 
 // const columns = columnsDataCheck;
-export default function AdminCertificateTable(props: { tableData: any }) {
-  const { tableData } = props;
+export default function AdminCertificateTable() {
   const [sorting, setSorting] = React.useState<SortingState>([]);
   const { data: certificateResponse, isFetching } = useQuery({
-    queryFn: async () => {
-      const response = await fetch(
-        'https://jsonplaceholder.typicode.com/posts',
-        {
-          method: 'GET',
-        },
-      );
-      const data = await response.json();
-      return data;
+    queryFn: () => {
+      return certificateList();
     },
     queryKey: ['certificate-table'],
   });
 
-  console.log({ certificateResponse, isFetching });
-
-  let defaultData = tableData;
   const columns = [
-    columnHelper.accessor('name', {
-      id: 'name',
+    columnHelper.accessor('id', {
+      id: 'id',
       header: () => (
-        <p className="text-sm font-bold text-gray-600 dark:text-white">NAME</p>
+        <p className="text-sm font-bold text-gray-600 dark:text-white">#ID</p>
       ),
       cell: (info) => (
         <p className="text-sm font-bold text-navy-700 dark:text-white">
@@ -58,56 +50,36 @@ export default function AdminCertificateTable(props: { tableData: any }) {
         </p>
       ),
     }),
-    columnHelper.accessor('status', {
-      id: 'status',
+    columnHelper.accessor('event.name', {
+      id: 'event.id',
       header: () => (
         <p className="text-sm font-bold text-gray-600 dark:text-white">
-          STATUS
+          Event Name
         </p>
       ),
       cell: (info) => (
         <div className="flex items-center">
-          {info.getValue() === 'Approved' ? (
-            <MdCheckCircle className="me-1 text-green-500 dark:text-green-300" />
-          ) : info.getValue() === 'Disable' ? (
-            <MdCancel className="me-1 text-red-500 dark:text-red-300" />
-          ) : info.getValue() === 'Error' ? (
-            <MdOutlineError className="me-1 text-amber-500 dark:text-amber-300" />
-          ) : null}
-          <p className="text-sm font-bold text-navy-700 dark:text-white">
-            {info.getValue()}
-          </p>
+          <p>{info.getValue()}</p>
         </div>
       ),
     }),
-    columnHelper.accessor('date', {
-      id: 'date',
+    columnHelper.accessor('person.name', {
+      id: 'person.id',
       header: () => (
-        <p className="text-sm font-bold text-gray-600 dark:text-white">DATE</p>
+        <p className="text-sm font-bold text-gray-600 dark:text-white">
+          Person Name
+        </p>
       ),
       cell: (info) => (
         <p className="text-sm font-bold text-navy-700 dark:text-white">
           {info.getValue()}
         </p>
-      ),
-    }),
-    columnHelper.accessor('progress', {
-      id: 'progress',
-      header: () => (
-        <p className="text-sm font-bold text-gray-600 dark:text-white">
-          PROGRESS
-        </p>
-      ),
-      cell: (info) => (
-        <div className="flex items-center">
-          <Progress width="w-[108px]" value={info.getValue()} />
-        </div>
       ),
     }),
   ]; // eslint-disable-next-line
-  const [data, setData] = React.useState(() => [...defaultData]);
+
   const table = useReactTable({
-    data,
+    data: certificateResponse || [],
     columns,
     state: {
       sorting,

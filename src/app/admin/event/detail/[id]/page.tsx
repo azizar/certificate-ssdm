@@ -17,8 +17,14 @@ import { MdGeneratingTokens } from 'react-icons/md';
 import { useMutation, useQuery } from 'react-query';
 import { FormEvent } from '../../form-event';
 
-import { FaRegCircleCheck, FaRegCircleXmark, FaX } from 'react-icons/fa6';
+import {
+  FaGenderless,
+  FaRegCircleCheck,
+  FaRegCircleXmark,
+  FaX,
+} from 'react-icons/fa6';
 import DownloadProgress from '../../../../../components/button-downloader';
+import { FaSync } from 'react-icons/fa';
 
 const EventDetailsPage = ({ params }: { params: { id: string } }) => {
   const router = useRouter();
@@ -57,14 +63,13 @@ const EventDetailsPage = ({ params }: { params: { id: string } }) => {
               {/*>*/}
               {/*  <MdGeneratingTokens />*/}
               {/*</Button>*/}
-              <DownloadProgress
-                path={'/api/admin/generate/template'}
-                method={'post'}
-                label={'Test Download'}
-                filename={'test.pdf'}
-                body={{ eventId: params.id }}
-
-              />
+              {/*<DownloadProgress*/}
+              {/*  path={'/api/admin/generate/template'}*/}
+              {/*  method={'post'}*/}
+              {/*  label={'Test Download'}*/}
+              {/*  filename={'test.pdf'}*/}
+              {/*  body={{ eventId: params.id }}*/}
+              {/*/>*/}
             </div>
             <div className="mt-3">
               <FormEvent
@@ -136,9 +141,16 @@ interface Person {
 
 const EventAbsence = ({ data }: { data: IAbsenceData[] }) => {
   let generateCertificateMutation = useMutation({
-    mutationKey: ['certificate-table'],
-    mutationFn: async (body: { eventId: number; personId: number }) => {
-      return await generateCertificate(body.eventId, body.personId);
+    mutationKey: ['generateCertificate'],
+    mutationFn: async ({
+      eventId,
+      personId,
+    }: {
+      eventId: number;
+      personId: number;
+    }) => {
+      console.log({ eventId, personId });
+      return await generateCertificate(eventId, personId);
     },
   });
   return (
@@ -146,31 +158,47 @@ const EventAbsence = ({ data }: { data: IAbsenceData[] }) => {
       {data.length >= 1 &&
         data.map((data, i) => (
           <ListItem key={i}>
-            <ListItemPrefix>
-              <Avatar
-                variant="circular"
-                alt="candice"
-                src="https://docs.material-tailwind.com/img/face-1.jpg"
-              />
-            </ListItemPrefix>
-            <div className="">
-              <Typography variant={'h6'}>{data.person.name}</Typography>
-              <Typography variant={'small'}>{data.person.email}</Typography>
+            <div className="w-full">
+              <div className={'flex items-center justify-between'}>
+                <div>
+                  <Typography variant={'h6'}>{data.person.name}</Typography>
+                  <Typography variant={'small'}>{data.person.email}</Typography>
+                </div>
+                <Button
+                  size={'sm'}
+                  // disabled={data.absences.some((val) => val.valid === false)}
+                  onClick={() => {
+                    generateCertificateMutation.mutate(
+                      { eventId: data.eventId, personId: data.personId },
+                      {
+                        onSuccess: (data) => {
+                          console.log('mutate:', data);
+                        },
+                        onError: (error) => {
+                          console.error('mutate error:', error);
+                        },
+                      },
+                    );
+                  }}
+                >
+                  <FaSync />
+                </Button>
+              </div>
 
-              <div className={'inline-flex'}>
-                <Typography variant={'small'}>Absence : </Typography>
+              <Typography variant={'small'}>Absence : </Typography>
+              <div className={'grid grid-cols-4'}>
                 {data.absences.map((abs) => (
                   <div
                     className={
-                      'ml-2 inline-flex items-center gap-2 divide-x divide-solid divide-background-900'
+                      'inline-flex items-center justify-between gap-2 border p-1 text-sm'
                     }
                     key={abs.day}
                   >
-                    Day {abs.day}{' '}
+                    <small>Day {abs.day}</small>
                     {abs.valid ? (
-                      <FaRegCircleCheck className={'size-3'} />
+                      <FaRegCircleCheck className={'size-3 text-green-600'} />
                     ) : (
-                      <FaRegCircleXmark className={'size-3'} />
+                      <FaRegCircleXmark className={'size-3 text-red-600'} />
                     )}
                   </div>
                 ))}
@@ -178,36 +206,11 @@ const EventAbsence = ({ data }: { data: IAbsenceData[] }) => {
             </div>
 
             <ListItemSuffix className={'flex gap-2'}>
-              <Button
-                disabled={data.absences.some((val) => val.valid === false)}
-                onClick={() => {
-                  generateCertificateMutation.mutate(
-                    { eventId: data.eventId, personId: data.personId },
-                    {
-                      onSuccess: (data) => {
-                        console.log('mutate:', data);
-                      },
-                      onError: (error) => {
-                        console.error('mutate error:', error);
-                      },
-                    },
-                  );
-                }}
-              >
-                Generate
-              </Button>
-              <Button
-                onClick={() => {
-                  fetch(`/api/admin/event/send/${data.eventId}`, {
-                    method: 'POST',
-                    body: JSON.stringify(data),
-                  })
-                    .then((res) => res.json())
-                    .then((res) => console.log({ res }));
-                }}
-              >
-                Send Email
-              </Button>
+              {/*<Button*/}
+
+              {/*>*/}
+              {/*  Send Email*/}
+              {/*</Button>*/}
             </ListItemSuffix>
           </ListItem>
         ))}

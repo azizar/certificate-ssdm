@@ -11,6 +11,8 @@ import { eachDayOfInterval } from 'date-fns';
 import lodash from 'lodash';
 import { auth } from '../auth';
 
+import { generateCertQueue } from '../worker/generate-certificate.worker';
+
 export const createEvent = async (formData: FormData) => {
   const rawFormData = Object.fromEntries(formData);
 
@@ -114,7 +116,6 @@ export const getEventList = async () => {
 
 export const getEventDetail = async (id: number, page = 1, limit = 10) => {
   try {
-    console.time('event detail with absence');
     const event = await prisma.event.findFirstOrThrow({
       where: { id },
       include: {
@@ -165,8 +166,6 @@ export const getEventDetail = async (id: number, page = 1, limit = 10) => {
       }),
     );
 
-    console.timeEnd('event detail with absence');
-
     return { ...event, person_absences: formated };
   } catch (error) {
     throw error;
@@ -194,24 +193,22 @@ export const personRegisterEvent = async (
   payload: EventRegister,
 ) => {
   try {
+    const session = await auth();
+
     const event = await prisma.event.findFirstOrThrow({
       where: { qr_code: code },
       include: { certificates: true },
     });
-
-    const session = await auth();
 
     const user = await prisma.user.findFirstOrThrow({
       where: { email: session.user.email },
     });
 
     const person = await prisma.person.upsert({
-      where: { identifier: payload.identifier },
+      where: { email: payload.email },
       update: {
         name: payload.full_name,
-        identifier: payload.identifier,
         title: payload.title,
-        email: payload.email,
       },
       create: {
         name: payload.full_name,
@@ -222,26 +219,78 @@ export const personRegisterEvent = async (
       },
     });
 
-    return await prisma.eventPersonAbsence.create({
-      data: {
-        eventId: event.id,
-        personId: person.id,
-        absenceDate: new Date(),
+    const today = new Date();
+
+    const existing = await prisma.eventPersonAbsence.findFirst({
+      where: {
+        AND: [
+          { personId: person.id },
+          { eventId: event.id },
+          {
+            absenceDate: {
+              gte: new Date(today.setHours(0, 0, 0, 0)),
+              lt: new Date(today.setHours(23, 59, 59, 999)),
+            },
+          },
+        ],
       },
     });
+
+    if (!existing) {
+      return await prisma.eventPersonAbsence.create({
+        data: {
+          eventId: event.id,
+          personId: person.id,
+          absenceDate: new Date(),
+        },
+      });
+    }
   } catch (error) {
     throw error;
   }
 };
 
-export const generateCertificate = async (eventId, personId) => {
+export const generateCertificate = async (
+  eventId: number,
+  personId: number,
+) => {
   try {
-    const [event, person] = await Promise.all([
-      await prisma.event.findFirst({ where: { id: eventId } }),
-      await prisma.person.findFirst({ where: { id: personId } }),
-    ]);
+    const event = await prisma.event.findFirstOrThrow({
+      where: { id: eventId },
+      include: {
+        person_absences: {
+          where: { personId: personId },
+          include: { person: true },
+          take: 1,
+        },
+        certificates: {
+          where: {
+            AND: [{ personId: personId }, { eventId: eventId }],
+          },
+          take: 1,
+        },
+      },
+    });
 
-    return 'OK';
+    const person = event?.person_absences[0]?.person;
+
+    if (!person) {
+      throw new Error('Person not found.');
+    }
+
+    await generateCertQueue.add(
+      'generateCertQueue',
+      { event, person },
+      { priority: 1, delay: 0 },
+    );
+
+    /**
+     * TODO:
+     * 1. Check certificate file, if false add queue generate certificate
+     * 2. Optional send email
+     */
+
+    return event;
   } catch (e) {
     throw e;
   }

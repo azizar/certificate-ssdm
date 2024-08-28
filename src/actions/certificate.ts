@@ -5,6 +5,10 @@ import process from 'node:process';
 import prisma from '../lib/prisma';
 import ProceedConvertDocs from '../lib/convert-and-send';
 
+export const certificateList = async () => {
+  return prisma.certificate.findMany();
+};
+
 export const testGenerate = async (eventId: string, personId) => {
   const event = await prisma.event.findFirstOrThrow({
     where: { id: +eventId },
