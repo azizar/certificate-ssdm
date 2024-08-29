@@ -27,8 +27,6 @@ const worker = new Worker(
   async (job) => {
     const data = job?.data;
 
-    console.log(Date.now() + ' Job : ', { job });
-
     const event: Event = data.event;
     const person: Person = data.person;
 
@@ -49,14 +47,18 @@ const worker = new Worker(
     try {
       const response = await processor.convertAndSavePdf();
 
+      console.log('Convert Response:', response);
+
       const certificate = await prisma.certificate.create({
         data: {
           eventId: event.id,
           personId: person.id,
-          cert_url: response.split('/').slice(6, 9).join('/'),
+          cert_url: response,
           status: 'SUCCESS',
         },
       });
+
+      console.log('Certificate:', certificate);
 
       return certificate;
     } catch (e) {

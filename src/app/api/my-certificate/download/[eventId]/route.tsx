@@ -30,7 +30,7 @@ export const GET = async (
   const filename = filenameArr[filenameArr.length - 1];
 
   const buffer = await fs.readFile(
-    path.resolve(path.join(process.cwd(), certificates.cert_url)),
+    path.resolve(path.join(certificates.cert_url)),
   );
   const headers = new Headers();
   // remember to change the filename `test.pdf` to whatever you want the downloaded file called
