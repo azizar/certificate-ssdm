@@ -12,17 +12,25 @@ export const certificateList = async () => {
   return prisma.certificate.findMany();
 };
 
-export const certificateListPerson = async (email: string) => {
+export const certificateListPerson = async () => {
+  const session = await auth();
+
   const person = await prisma.person.findFirst({
-    where: { email: email },
+    where: { email: session.user.email },
   });
 
-  console.log(person);
+  console.log({ person });
 
-  return prisma.certificate.findMany({
+  const certificates = await prisma.certificate.findMany({
     where: { personId: person.id },
-    include: { person: true, event: true },
+    include: {
+      event: {
+        select: { id: true, name: true },
+      },
+    },
   });
+
+  return certificates;
 };
 
 export const testGenerate = async (eventId: string, personId) => {

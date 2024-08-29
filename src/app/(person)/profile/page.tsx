@@ -1,9 +1,8 @@
 import React from 'react';
-import ProfilePerson from './ProfilePerson';
-
+import ProfileOverview from './ProfilePerson';
 
 const MyComponent = async () => {
-  return <ProfilePerson />;
+  return <ProfileOverview />;
 };
 
 export default MyComponent;

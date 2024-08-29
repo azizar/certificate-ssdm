@@ -31,7 +31,7 @@ const ProfileOverview = () => {
       return data;
     },
   });
-  console.log({ certificates });
+
   if (certificates)
     return (
       <div className="flex w-full flex-col gap-5 lg:gap-5">
