@@ -1,3 +1,4 @@
+'use client'
 import Dropdown from 'components/dropdown';
 import NavLink from 'components/link/NavLink';
 import React from 'react';

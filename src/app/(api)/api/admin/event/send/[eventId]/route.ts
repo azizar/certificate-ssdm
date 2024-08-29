@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
-import ProceedConvertDocs from '../../../../../../lib/convert-and-send';
-import prisma from 'lib/prisma';
+import ProceedConvertDocs from '../../../../../../../lib/convert-and-send';
+import prisma from '../../../../../../../lib/prisma';
 
 export async function POST(
   request: Request,

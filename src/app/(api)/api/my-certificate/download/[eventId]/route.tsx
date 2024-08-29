@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import prisma from '../../../../../lib/prisma';
-import { auth } from '../../../../../auth';
+import prisma from '../../../../../../lib/prisma';
+import { auth } from '../../../../../../auth';
 import * as fs from 'fs/promises';
 import process from 'node:process';
 import * as path from 'node:path';

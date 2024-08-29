@@ -18,7 +18,6 @@ export default function Admin({ children }: { children: React.ReactNode }) {
   // states and functions
   const [open, setOpen] = useState(false);
   const pathname = usePathname();
-  if (isWindowAvailable()) document.documentElement.dir = 'ltr';
   return (
     <SessionProvider>
       <div className="flex h-full w-full bg-background-100 dark:bg-background-900">

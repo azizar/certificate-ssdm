@@ -1,10 +1,12 @@
 //@ts-nocheck
+'use client';
 import Card from 'components/card';
 import CardMenu from 'components/card/CardMenu';
 
-import React from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 
-import { Button } from '@material-tailwind/react';
+import axios from 'axios';
+
 import {
   createColumnHelper,
   flexRender,
@@ -15,9 +17,10 @@ import {
 } from '@tanstack/react-table';
 import { FiLoader } from 'react-icons/fi';
 import { useQuery } from 'react-query';
-import { certificateList } from '../../../actions/certificate';
 
 import { Event, Person } from '.prisma/client';
+
+import { Option, Select } from '@material-tailwind/react';
 
 type CertificateTableRow = {
   id: number;
@@ -27,59 +30,72 @@ type CertificateTableRow = {
 };
 
 const columnHelper = createColumnHelper<CertificateTableRow>();
+const columns = [
+  columnHelper.accessor('id', {
+    id: 'id',
+    header: () => (
+      <p className="text-sm font-bold text-gray-600 dark:text-white">#ID</p>
+    ),
+    cell: (info) => (
+      <p className="text-sm font-bold text-navy-700 dark:text-white">
+        {info.getValue()}
+      </p>
+    ),
+  }),
+  columnHelper.accessor('event.name', {
+    id: 'event.id',
+    header: () => (
+      <p className="text-sm font-bold text-gray-600 dark:text-white">
+        Event Name
+      </p>
+    ),
+    cell: (info) => (
+      <div className="flex items-center">
+        <p>{info.getValue()}</p>
+      </div>
+    ),
+  }),
+  columnHelper.accessor('person.name', {
+    id: 'person.id',
+    header: () => (
+      <p className="text-sm font-bold text-gray-600 dark:text-white">
+        Person Name
+      </p>
+    ),
+    cell: (info) => (
+      <p className="text-sm font-bold text-navy-700 dark:text-white">
+        {info.getValue()}
+      </p>
+    ),
+  }),
+]; // eslint-disable-next-line
 
 // const columns = columnsDataCheck;
 export default function AdminCertificateTable() {
   const [sorting, setSorting] = React.useState<SortingState>([]);
-  const { data: certificateResponse, isFetching } = useQuery({
-    queryFn: () => {
-      return certificateList();
-    },
-    queryKey: ['certificate-table'],
+  const [filter, setFilter] = React.useState<{
+    event: string | null;
+    person: string | null;
+  }>();
+  const { data, isFetching, refetch } = useQuery({
+    queryKey: ['certificate-table', filter],
+    queryFn: () =>
+      axios.get('http://localhost:3000/api/admin/certificate', {
+        params: filter,
+        headers: {
+          Accept: 'application/json',
+          'Content-Type': 'application/json',
+        },
+      }),
+    keepPreviousData: true,
   });
 
-  const columns = [
-    columnHelper.accessor('id', {
-      id: 'id',
-      header: () => (
-        <p className="text-sm font-bold text-gray-600 dark:text-white">#ID</p>
-      ),
-      cell: (info) => (
-        <p className="text-sm font-bold text-navy-700 dark:text-white">
-          {info.getValue()}
-        </p>
-      ),
-    }),
-    columnHelper.accessor('event.name', {
-      id: 'event.id',
-      header: () => (
-        <p className="text-sm font-bold text-gray-600 dark:text-white">
-          Event Name
-        </p>
-      ),
-      cell: (info) => (
-        <div className="flex items-center">
-          <p>{info.getValue()}</p>
-        </div>
-      ),
-    }),
-    columnHelper.accessor('person.name', {
-      id: 'person.id',
-      header: () => (
-        <p className="text-sm font-bold text-gray-600 dark:text-white">
-          Person Name
-        </p>
-      ),
-      cell: (info) => (
-        <p className="text-sm font-bold text-navy-700 dark:text-white">
-          {info.getValue()}
-        </p>
-      ),
-    }),
-  ]; // eslint-disable-next-line
+  useEffect(() => {
+    refetch();
+  }, [filter]);
 
   const table = useReactTable({
-    data: certificateResponse || [],
+    data: data?.data,
     columns,
     state: {
       sorting,
@@ -87,12 +103,11 @@ export default function AdminCertificateTable() {
     onSortingChange: setSorting,
     getCoreRowModel: getCoreRowModel(),
     getSortedRowModel: getSortedRowModel(),
-    debugTable: true,
   });
 
-  if (isFetching) {
-    return <FiLoader className="mx-auto mt-8 size-6 animate-spin" />;
-  }
+  const handleChangeEventFilter = (value: string) => {
+    if (value) setFilter((prev) => ({ ...prev, event: value }));
+  };
 
   return (
     <Card extra={'w-full h-full px-6 pb-6 sm:overflow-x-auto'}>
@@ -100,13 +115,22 @@ export default function AdminCertificateTable() {
         <div className="text-xl font-bold text-navy-700 dark:text-white">
           Certificate Table
         </div>
-        <CardMenu />
+      </div>
+
+      <div className={'mt-4 grid grid-cols-2 gap-4'}>
+        <EventSelector
+          onValueChange={handleChangeEventFilter}
+          value={filter?.event}
+        />
+        {/*<PersonSelector*/}
+        {/*  onValueChange={(value) => {*/}
+        {/*    setFilter((prev) => ({ ...prev, person: value }));*/}
+        {/*  }}*/}
+        {/*  value={filter.event}*/}
+        {/*/>*/}
       </div>
 
       <div className="mt-8 overflow-x-scroll xl:overflow-x-hidden">
-        <div className="">
-          <Button>Test Generate</Button>
-        </div>
         <table className="w-full">
           <thead>
             {table.getHeaderGroups().map((headerGroup) => (
@@ -137,31 +161,115 @@ export default function AdminCertificateTable() {
           </thead>
           <tbody>
             {!isFetching &&
-              table
-                .getRowModel()
-                .rows.slice(0, 5)
-                .map((row) => {
-                  return (
-                    <tr key={row.id}>
-                      {row.getVisibleCells().map((cell) => {
-                        return (
-                          <td
-                            key={cell.id}
-                            className="min-w-[150px] border-white/0 py-3  pr-4"
-                          >
-                            {flexRender(
-                              cell.column.columnDef.cell,
-                              cell.getContext(),
-                            )}
-                          </td>
-                        );
-                      })}
-                    </tr>
-                  );
-                })}
+              data &&
+              table.getRowModel().rows.map((row) => {
+                return (
+                  <tr key={row.id}>
+                    {row.getVisibleCells().map((cell) => {
+                      return (
+                        <td
+                          key={cell.id}
+                          className="min-w-[150px] border-white/0 py-3  pr-4"
+                        >
+                          {flexRender(
+                            cell.column.columnDef.cell,
+                            cell.getContext(),
+                          )}
+                        </td>
+                      );
+                    })}
+                  </tr>
+                );
+              })}
           </tbody>
         </table>
       </div>
     </Card>
+  );
+}
+
+function EventSelector({
+  onValueChange,
+}: {
+  onValueChange?: (value: string) => void;
+}) {
+  const [value, setValue] = React.useState<string | null>(null);
+  const [options, setOptions] = React.useState([]);
+
+  // const getEvent = async () => {
+  //   const resp = await fetch('/api/admin/event');
+  //   const data = await resp.json();
+  //   setOptions(data.map((opt) => ({ value: opt.id + '', label: opt.name })));
+  // };
+
+  useState(() => {
+    if (!options.length) {
+      axios.get('/api/admin/event').then((res) => {
+        setOptions(res.data);
+      });
+    }
+  }, []);
+
+  useEffect(() => {
+    // onValueChange(value);
+  }, [value]);
+
+  return (
+    <div className="w-full">
+      <Select
+        // value={value}
+        label="Select Event"
+        onChange={(val) => onValueChange(val)}
+        selected={(element) => {
+          // if (element) {
+          //   setValue(element.props.value);
+          // }
+          return (
+            element &&
+            React.cloneElement(element, {
+              // disabled: true,
+              className:
+                'flex items-center opacity-100 px-0 gap-2 pointer-events-none',
+            })
+          );
+        }}
+      >
+        {options?.map((option, index) => (
+          <Option value={option.id + ''} key={index}>
+            {option.name}
+          </Option>
+        ))}
+      </Select>
+    </div>
+  );
+}
+
+function PersonSelector({
+  onValueChange,
+  value,
+}: {
+  onValueChange?: (value: string) => void;
+  value: string;
+}) {
+  // const [value, setValue] = React.useState(value);
+  const [options, setOptions] = React.useState([]);
+
+  return (
+    <div className="w-full">
+      <Select
+        label={'Select Person' + value}
+        value={value}
+        onChange={(val) => {
+          setValue(val);
+          onValueChange(val);
+        }}
+      >
+        {options?.map((option) => (
+          <Option value={option.id + ''} key={option.value}>
+            {option.name + ''}
+          </Option>
+        ))}
+      </Select>
+    </div>
   );
 }

@@ -24,7 +24,7 @@
     "@simplewebauthn/server": "^9.0.3",
     "@tanstack/react-table": "^8.7.9",
     "apexcharts": "3.35.5",
-    "axios": "^1.7.3",
+    "axios": "^1.7.5",
     "bullmq": "^5.12.1",
     "date-fns": "^3.6.0",
     "dayjs": "^1.11.12",

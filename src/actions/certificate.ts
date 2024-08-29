@@ -9,7 +9,12 @@ import { Simulate } from 'react-dom/test-utils';
 import wheel = Simulate.wheel;
 
 export const certificateList = async () => {
-  return prisma.certificate.findMany();
+  try {
+    const data = await prisma.certificate.count()
+    return data;
+  } catch (e) {
+    throw e;
+  }
 };
 
 export const certificateListPerson = async () => {
