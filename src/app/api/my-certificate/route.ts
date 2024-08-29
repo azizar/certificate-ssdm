@@ -7,8 +7,12 @@ export async function GET() {
   const session = await auth();
 
   const person = await prisma.person.findFirst({
-    where: { email: session.user.email },
+    where: { email: session.user.email+'asdasdasds' },
   });
+
+  if (!person) {
+    return NextResponse.json({ data: [] });
+  }
 
   const certificates = await prisma.certificate.findMany({
     where: { personId: person.id },
