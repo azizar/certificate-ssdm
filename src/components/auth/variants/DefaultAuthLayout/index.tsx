@@ -1,6 +1,6 @@
 import NavLink from 'components/link/NavLink';
 import Image from 'next/image';
-import authImg from '/public/svg/logo.svg';
+import authImg from '/public/logo-bw.png';
 function Default(props: { maincard: JSX.Element; showBackButton: boolean }) {
   const { maincard, showBackButton } = props;
   return (
@@ -8,7 +8,7 @@ function Default(props: { maincard: JSX.Element; showBackButton: boolean }) {
       <div className="mx-auto flex min-h-full w-full flex-col justify-start pt-12 md:max-w-[75%] lg:h-screen lg:max-w-[1013px] lg:px-8 lg:pt-0 xl:h-[100vh] xl:max-w-[1383px] xl:px-0 xl:pl-[70px]">
         <div className="mb-auto flex flex-col pl-5 pr-5 md:pl-12 md:pr-0 lg:max-w-[48%] lg:pl-0 xl:max-w-full">
           {showBackButton && (
-            <NavLink href="/admin" className="mt-0 w-max lg:pt-10">
+            <NavLink href="/" className="mt-0 w-max lg:pt-10 mb-9" id={"nav-link"}>
               <div className="mx-auto flex h-fit w-fit items-center hover:cursor-pointer">
                 <svg
                   width="8"
@@ -22,7 +22,7 @@ function Default(props: { maincard: JSX.Element; showBackButton: boolean }) {
                     fill="#A3AED0"
                   />
                 </svg>
-                <p className="ml-3 text-sm text-gray-600">Back to Dashboard</p>
+                <p className="ml-3 text-sm text-gray-600">Back to Home</p>
               </div>
             </NavLink>
           )}
@@ -30,9 +30,9 @@ function Default(props: { maincard: JSX.Element; showBackButton: boolean }) {
           <div className="absolute right-0 hidden h-full min-h-screen md:block lg:w-[49vw] 2xl:w-[44vw]">
             <div
               // style={{ backgroundImage: authImg ? `url(${authImg})` : '' }}
-              className={`absolute flex h-full w-full items-end justify-center bg-gradient-to-br from-brand-400 to-brand-600 bg-cover bg-center lg:rounded-bl-[120px] xl:rounded-bl-[200px]`}
+              className={`absolute flex h-full w-full items-center justify-center bg-gradient-to-br from-brand-400 to-brand-600 bg-cover bg-center lg:rounded-bl-[120px] xl:rounded-bl-[200px]`}
             >
-              <div className="relative flex h-full w-full">
+              <div className="relative flex w-full justify-center">
                 {/* <div
                   style={{ backgroundImage: `url(${authImg.src})` }}
                   className="flex h-full w-full bg-cover"
