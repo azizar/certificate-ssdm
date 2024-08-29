@@ -284,7 +284,7 @@ export const generateCertificate = async (
     await generateCertQueue.add(
       'generateCertQueue',
       { event, person },
-      { priority: 1, delay: 0 },
+      { priority: 1, delay: 1000 },
     );
 
     /**

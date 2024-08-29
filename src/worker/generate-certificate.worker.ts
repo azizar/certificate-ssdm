@@ -2,10 +2,13 @@ import { Worker, Queue } from 'bullmq';
 import Redis from 'ioredis';
 import ProceedConvertDocs from '../lib/convert-and-send';
 import { Event, Person } from '.prisma/client';
+import process from 'node:process';
+import prisma from '../lib/prisma';
 
 const connection = new Redis(process.env.REDIS_URL!, {
   maxRetriesPerRequest: null,
-
+  password: process.env.REDIS_PASSWORD,
+  username: 'default',
 });
 
 export const generateCertQueue = new Queue('generateCertQueue', {
@@ -24,6 +27,8 @@ const worker = new Worker(
   async (job) => {
     const data = job?.data;
 
+    console.log(Date.now() + ' Job : ', { job });
+
     const event: Event = data.event;
     const person: Person = data.person;
 
@@ -36,24 +41,27 @@ const worker = new Worker(
     });
 
     if (check) {
-      console.log("Certificate Already Exists");
-      return;
+      throw new Error('Certificate Already Exists');
     }
 
     const processor = new ProceedConvertDocs(event, person);
 
-    const response = await processor.convertAndSavePdf();
+    try {
+      const response = await processor.convertAndSavePdf();
 
-    const certificate = await prisma.certificate.create({
-      data: {
-        eventId: event.id,
-        personId: person.id,
-        cert_url: response.split('/').slice(6, 9).join('/'),
-        status: 'SUCCESS',
-      },
-    });
+      const certificate = await prisma.certificate.create({
+        data: {
+          eventId: event.id,
+          personId: person.id,
+          cert_url: response.split('/').slice(6, 9).join('/'),
+          status: 'SUCCESS',
+        },
+      });
 
-    console.log({ certificate });
+      return certificate;
+    } catch (e) {
+      throw e;
+    }
   },
   {
     connection,
@@ -62,5 +70,14 @@ const worker = new Worker(
     removeOnFail: { count: 5000 },
   },
 );
+
+worker.on('completed', (job) => {
+  console.log(`Job ID:${job.id} has completed!`);
+});
+
+worker.on('failed', (job, err) => {
+  console.log(`Job ID:${job.id} has failed with ${err.message}`);
+  console.error(err);
+});
 
 export default worker;

@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import ProceedConvertDocs from '../../../../../../lib/convert-and-send';
+import prisma from 'lib/prisma';
 
 export async function POST(
   request: Request,
@@ -12,7 +13,7 @@ export async function POST(
     where: { id: +params.eventId },
     include: {
       person_absences: {
-        distinct:'id',
+        distinct: 'id',
         where: { personId: +personId },
         take: 1,
       },
