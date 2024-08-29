@@ -36,23 +36,26 @@ function EventRegister({ event }: { event: Event }) {
   const [success, setSuccess] = useState(false);
 
   const registerMutation = useMutation({
-    mutationKey: ['register', event],
-    mutationFn: async (data: EventRegister) => {
-      return await personRegisterEvent(event.qr_code, data);
+    mutationKey: ['register-event'],
+    mutationFn: async (data: any) => {
+      return await personRegisterEvent(data);
     },
   });
 
   const onSubmit = async (data: EventRegister) => {
-    registerMutation.mutate(data, {
-      onError(error, variables, context) {
-        console.error(error);
-        alert('Absensi gagal !');
+    registerMutation.mutate(
+      { ...data, event },
+      {
+        onError(error, variables, context) {
+          console.error(error);
+          alert('Absensi gagal !');
+        },
+        onSuccess(data, variables, context) {
+          alert('Absensi sukses.');
+          setSuccess(true);
+        },
       },
-      onSuccess(data, variables, context) {
-        alert('Absensi sukses.');
-        setSuccess(true);
-      },
-    });
+    );
   };
 
   return (

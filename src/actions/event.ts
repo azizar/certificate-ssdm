@@ -9,7 +9,7 @@ import prisma from 'lib/prisma';
 import { eachDayOfInterval } from 'date-fns';
 
 import lodash from 'lodash';
-import { auth } from '../auth';
+import { auth, signOut } from '../auth';
 
 import { generateCertQueue } from '../worker/generate-certificate.worker';
 
@@ -181,6 +181,7 @@ export const getEventByCode = async (code: string) => {
         person_responsibility: true,
         start_date: true,
         end_date: true,
+        qr_code: true
       },
     });
   } catch (error) {
@@ -189,15 +190,15 @@ export const getEventByCode = async (code: string) => {
 };
 
 export const personRegisterEvent = async (
-  code: string,
-  payload: EventRegister,
+  payload: EventRegister & { event: Event },
 ) => {
   try {
     const session = await auth();
 
-    const event = await prisma.event.findFirstOrThrow({
-      where: { qr_code: code },
-      include: { certificates: true },
+    if (!session) await signOut()
+
+    const event = await prisma.event.findFirst({
+      where: { qr_code: payload.event.qr_code },
     });
 
     const user = await prisma.user.findFirstOrThrow({
@@ -236,15 +237,17 @@ export const personRegisterEvent = async (
       },
     });
 
-    if (!existing) {
-      return await prisma.eventPersonAbsence.create({
-        data: {
-          eventId: event.id,
-          personId: person.id,
-          absenceDate: new Date(),
-        },
-      });
-    }
+    console.log({ existing });
+
+    if (existing) throw new Error('Anda telah absen untuk hari ini.');
+
+    return await prisma.eventPersonAbsence.create({
+      data: {
+        eventId: event.id,
+        personId: person.id,
+        absenceDate: new Date(),
+      },
+    });
   } catch (error) {
     throw error;
   }

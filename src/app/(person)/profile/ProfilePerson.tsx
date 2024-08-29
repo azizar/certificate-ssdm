@@ -1,7 +1,7 @@
 'use client';
 import Card from '../../../components/card';
 import CardMenu from '../../../components/card/CardMenu';
-import React from 'react';
+import React, { useCallback, useState } from 'react';
 import {
   Avatar,
   Button,
@@ -49,15 +49,15 @@ const ProfileOverview = () => {
                     width="2"
                     height="20"
                     className="h-full w-full rounded-full"
-                    src={avatar}
-                    alt=""
+                    src={session?.data?.user?.image || avatar}
+                    alt="User Avatar"
                   />
                 </div>
               </div>
 
               {/* Name and position */}
               <div className="mt-16 flex flex-col items-center">
-                <h4 className="text-xl font-bold text-navy-700 dark:text-white">
+                <h4 className="text-center text-xl font-bold text-navy-700 dark:text-white sm:text-base">
                   {session?.data?.user?.name}
                 </h4>
                 <h5 className="text-base font-normal text-gray-600">
@@ -69,7 +69,7 @@ const ProfileOverview = () => {
               <div className="mb-3 mt-6 flex gap-4 md:!gap-14">
                 <div className="flex flex-col items-center justify-center">
                   <h4 className="text-2xl font-bold text-navy-700 dark:text-white">
-                    6
+                    0
                   </h4>
                   <p className="text-sm font-normal text-gray-600">
                     Event Attended
@@ -77,7 +77,7 @@ const ProfileOverview = () => {
                 </div>
                 <div className="flex flex-col items-center justify-center">
                   <h4 className="text-2xl font-bold text-navy-700 dark:text-white">
-                    4
+                    {certificates.length || 0}
                   </h4>
                   <p className="text-sm font-normal text-gray-600">
                     Certificates
@@ -88,11 +88,8 @@ const ProfileOverview = () => {
           </div>
           <div className="col-span-8 lg:!mb-0">
             <Card extra={'w-full h-full p-[16px] bg-cover'}>
-              <div className="relative flex items-center justify-between pt-4">
-                <div className="text-xl font-bold text-navy-700 dark:text-white">
-                  Your Certificates
-                </div>
-                <CardMenu />
+              <div className="text-xl font-bold text-navy-700 dark:text-white sm:text-center">
+                <Typography variant={'lead'}> Your Certificates</Typography>
               </div>
               <List>
                 {certificates.length >= 1 &&
@@ -102,24 +99,16 @@ const ProfileOverview = () => {
                       className={'hover:cursor-default hover:bg-transparent'}
                     >
                       <ListItemPrefix>
-                        <BiCalendarEvent size={38} />
+                        <Typography variant={'h6'}>{i + 1}.</Typography>
                       </ListItemPrefix>
                       <div className="">
                         <Typography variant={'h6'}>
                           Event {data?.event?.name}
                         </Typography>
-                        <Typography variant={'small'}>
-                          {data.cert_url}
-                        </Typography>
                       </div>
 
                       <ListItemSuffix className={'flex gap-2'}>
-                        <Button
-                          onClick={() => {}}
-                          className={'inline-flex items-center gap-2'}
-                        >
-                          <FaDownload />
-                        </Button>
+                        <ButtonDownload event={data} />
                       </ListItemSuffix>
                     </ListItem>
                   ))}
@@ -130,5 +119,56 @@ const ProfileOverview = () => {
         {/* all project & ... */}
       </div>
     );
+};
+
+const ButtonDownload = ({ event }: { event }) => {
+  const [isLoading, setIsLoading] = useState(false);
+  const handleDownload = async (data) => {
+    try {
+      setIsLoading(true);
+      const response = await fetch(
+        '/api/my-certificate/download/' + data?.event.id,
+      );
+
+      const blob = await response.blob();
+
+      const filename =
+        response.headers
+          .get('Content-Disposition')
+          .split(';')[1]
+          .split('=')[1] ?? 'certificate.pdf';
+
+      const url = URL.createObjectURL(blob);
+
+      const a = document.createElement('a');
+      a.href = url;
+      // a.download = filename;
+      a.target = '_blank';
+
+      function handleDownload() {
+        setTimeout(() => {
+          URL.revokeObjectURL(url);
+          a.removeEventListener('click', handleDownload);
+        }, 150);
+      }
+
+      a.addEventListener('click', handleDownload, false);
+      a.click();
+    } catch (e) {
+      console.log(e);
+      alert('Error download certificate');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  return (
+    <Button
+      onClick={() => handleDownload(event)}
+      className={'inline-flex items-center gap-2'}
+    >
+      {isLoading ? <Spinner /> : <FaDownload />}
+    </Button>
+  );
 };
 export default ProfileOverview;
