@@ -44,3 +44,4 @@ uploads
 generate
 google-creds.json
 certificates/*
+google-client-secret.json
