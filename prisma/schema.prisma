@@ -10,8 +10,10 @@ datasource db {
 }
 
 generator client {
-  provider = "prisma-client-js"
-  // engineType = "library"
+  provider        = "prisma-client-js"
+  engineType      = "library"
+  previewFeatures = ["fullTextSearch", "fullTextIndex"]
+  // output          = "../src/generated/client"
 }
 
 model User {
@@ -29,7 +31,6 @@ model User {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-  Person    Person[]
 }
 
 model Account {
@@ -93,15 +94,15 @@ model Person {
   email      String  @unique
   name       String
   title      String?
-  userId     String
 
-  EventPersonAbsence EventPersonAbsence[]
-  Certificate        Certificate[]
-  User               User                 @relation(fields: [userId], references: [id])
+  EventPersonAbsence  EventPersonAbsence[]
+  Certificate         Certificate[]
+  EventPersonRegister EventPersonRegister[]
+  EventAbsence        EventAbsence[]
 }
 
 model Event {
-  id                    Int                  @id @default(autoincrement())
+  id                    Int                   @id @default(autoincrement())
   name                  String
   person_responsibility String
   start_date            DateTime
@@ -109,9 +110,31 @@ model Event {
   qr_code               String?
   qr_url                String?
   template_file         String?
+  google_docs_id        String?
   certificates          Certificate[]
   person_absences       EventPersonAbsence[]
-  google_docs_id        String?
+  EventAbsence          EventAbsence[]
+  registerPersons       EventPersonRegister[]
+}
+
+model EventPersonRegister {
+  id           Int      @id @default(autoincrement())
+  registerDate DateTime
+  eventId      Int
+  personId     Int
+  Person       Person   @relation(fields: [personId], references: [id])
+  Event        Event    @relation(fields: [eventId], references: [id])
+}
+
+model EventAbsence {
+  id          Int      @id @default(autoincrement())
+  registerId  Int
+  personId    Int
+  absenceDate DateTime
+  eventId     Int?
+
+  Person Person @relation(fields: [personId], references: [id])
+  Event  Event? @relation(fields: [eventId], references: [id])
 }
 
 model EventPersonAbsence {
@@ -124,11 +147,25 @@ model EventPersonAbsence {
 }
 
 model Certificate {
-  id       Int     @id @default(autoincrement())
-  eventId  Int
-  personId Int
-  event    Event   @relation(fields: [eventId], references: [id])
-  person   Person  @relation(fields: [personId], references: [id])
-  status   String?
-  cert_url String?
+  id         Int      @id @default(autoincrement())
+  eventId    Int
+  personId   Int
+  event      Event    @relation(fields: [eventId], references: [id])
+  person     Person   @relation(fields: [personId], references: [id])
+  status     String?
+  cert_url   String?
+  drive_url  String?
+  drive_file String?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+}
+
+model BullQueue {
+  id        String   @id @default(cuid())
+  data      String?
+  status    String   @default("Processing")
+  error     String?
+  value     String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }

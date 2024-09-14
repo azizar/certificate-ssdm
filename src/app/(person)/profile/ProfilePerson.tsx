@@ -13,13 +13,16 @@ import {
   Typography,
 } from '@material-tailwind/react';
 
+
+
 import Image from 'next/image';
 import { BiCalendarEvent } from 'react-icons/bi';
-import avatar from '/public/img/avatars/avatar11.png';
+import avatar from '/public/default-user.png';
 import banner from '/public/img/profile/banner.png';
 import { FaDownload } from 'react-icons/fa';
 import { useQuery } from 'react-query';
 import { useSession } from 'next-auth/react';
+import { SetupPersonProfile } from './SetupPersonProfile';
 
 const ProfileOverview = () => {
   const session = useSession();
@@ -49,7 +52,7 @@ const ProfileOverview = () => {
                     width="2"
                     height="20"
                     className="h-full w-full rounded-full"
-                    src={session?.data?.user?.image || avatar}
+                    src={avatar}
                     alt="User Avatar"
                   />
                 </div>
@@ -84,6 +87,10 @@ const ProfileOverview = () => {
                   </p>
                 </div>
               </div>
+              {/*<div className={'w-full border-t-2 py-4 space-y-4'}>*/}
+              {/*  <Typography variant={'h5'}>Pengaturan Sertifikat</Typography>*/}
+              {/*  <SetupPersonProfile session={session.data} />*/}
+              {/*</div>*/}
             </Card>
           </div>
           <div className="col-span-8 lg:!mb-0">

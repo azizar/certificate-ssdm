@@ -1,15 +1,9 @@
 'use client';
-import { useSession } from 'next-auth/react';
-import React, { useEffect, useState } from 'react';
-import { AxiosProgressEvent, AxiosRequestConfig } from 'axios';
+
+import React from 'react';
 import { Button, Spinner } from '@material-tailwind/react';
 import { FaDownload } from 'react-icons/fa';
-import { method } from 'lodash';
-import { body } from '@material-tailwind/react/theme/base/typography';
-import { testGenerate } from '../actions/certificate';
-import prisma from '../lib/prisma';
-import ProceedConvertDocs from '../lib/convert-and-send';
-import { FiLoader } from 'react-icons/fi';
+
 
 interface IDownloadProgress {
   path: string;

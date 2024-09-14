@@ -1,21 +1,19 @@
 import { NextRequest, NextResponse } from 'next/server';
-import prisma from '../../../../../lib/prisma';
-import { certificateList } from '../../../../../actions/certificate';
 
 export async function GET(req: NextRequest) {
   try {
-    const event = +req.nextUrl.searchParams.get('event') || '';
-    const person = +req.nextUrl.searchParams.get('person');
     const limit = +req.nextUrl.searchParams.get('limit') || 10;
     const page = +req.nextUrl.searchParams.get('page') || 1;
+    const q = req.nextUrl.searchParams.get('q') || undefined;
 
-    const data = await prisma.certificate.findMany({
+    const search = { name: { search: q } };
+
+    const total = await prisma.person.count();
+    const data = await prisma.person.findMany({
+      where: q ? search : {},
       take: +limit,
       skip: +limit * (+page - 1),
-      include: { person: true, event: true },
     });
-
-    const total = await prisma.certificate.count();
 
     return NextResponse.json({ data, limit, page, total });
   } catch (e) {

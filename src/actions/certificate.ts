@@ -3,15 +3,32 @@
 import { google } from 'googleapis';
 import process from 'node:process';
 import prisma from '../lib/prisma';
-import ProceedConvertDocs from '../lib/convert-and-send';
+import GoogleApis from '../lib/googleapis';
 import { auth } from '../auth';
 import { Simulate } from 'react-dom/test-utils';
 import wheel = Simulate.wheel;
 
-export const certificateList = async () => {
+interface Pagination {
+  page?: number;
+  limit?: number;
+  person?: number;
+  event?: number;
+}
+
+export const certificateList = async (props: Pagination) => {
   try {
-    const data = await prisma.certificate.count()
-    return data;
+    const limit = props.limit || 10;
+    const page = props.page || 1;
+
+    const data = await prisma.certificate.findMany({
+      take: +limit,
+      skip: +limit * (+page - 1),
+      include: { person: true, event: true },
+    });
+
+    const total = await prisma.certificate.count();
+
+    return { data, limit, page, total };
   } catch (e) {
     throw e;
   }
@@ -45,7 +62,7 @@ export const testGenerate = async (eventId: string, personId) => {
 
   const person = await prisma.person.findFirstOrThrow({ where: { id: 1 } });
 
-  const processor = new ProceedConvertDocs(event, person);
+  const processor = new GoogleApis(event, person);
 
   return processor.proceed();
 };

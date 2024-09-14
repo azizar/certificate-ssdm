@@ -21,6 +21,8 @@ import { useQuery } from 'react-query';
 import { Event, Person } from '.prisma/client';
 
 import { Option, Select } from '@material-tailwind/react';
+import { DataTablePagination } from '../../table-pagination';
+import { usePagination } from '../../../hooks/use-pagination';
 
 type CertificateTableRow = {
   id: number;
@@ -68,11 +70,38 @@ const columns = [
       </p>
     ),
   }),
+  columnHelper.accessor('createdAt', {
+    id: 'createdAt',
+    header: () => (
+      <p className="text-sm font-bold text-gray-600 dark:text-white">
+        Created At
+      </p>
+    ),
+    cell: (info) => (
+      <p className="text-sm font-bold text-navy-700 dark:text-white">
+        {info.getValue()}
+      </p>
+    ),
+  }),
+  columnHelper.accessor('updatedAt', {
+    id: 'updatedAt',
+    header: () => (
+      <p className="text-sm font-bold text-gray-600 dark:text-white">
+        Updated At
+      </p>
+    ),
+    cell: (info) => (
+      <p className="text-sm font-bold text-navy-700 dark:text-white">
+        {info.getValue()}
+      </p>
+    ),
+  }),
 ]; // eslint-disable-next-line
 
 // const columns = columnsDataCheck;
 export default function AdminCertificateTable() {
   const [sorting, setSorting] = React.useState<SortingState>([]);
+  const { pagination, onPaginationChange, page, limit } = usePagination();
   const [filter, setFilter] = React.useState<{
     event: string | null;
     person: string | null;
@@ -81,7 +110,7 @@ export default function AdminCertificateTable() {
     queryKey: ['certificate-table', filter],
     queryFn: () =>
       axios.get('http://localhost:3000/api/admin/certificate', {
-        params: filter,
+        params: { ...filter, page, limit },
         headers: {
           Accept: 'application/json',
           'Content-Type': 'application/json',
@@ -90,19 +119,25 @@ export default function AdminCertificateTable() {
     keepPreviousData: true,
   });
 
+  console.log(data);
+
   useEffect(() => {
     refetch();
-  }, [filter]);
+  }, [filter, pagination]);
 
   const table = useReactTable({
-    data: data?.data,
+    data: data?.data?.data || [],
     columns,
     state: {
       sorting,
+      pagination,
     },
     onSortingChange: setSorting,
+    onPaginationChange,
     getCoreRowModel: getCoreRowModel(),
     getSortedRowModel: getSortedRowModel(),
+    manualPagination: true,
+    rowCount: data?.data?.data?.total,
   });
 
   const handleChangeEventFilter = (value: string) => {
@@ -130,8 +165,8 @@ export default function AdminCertificateTable() {
         {/*/>*/}
       </div>
 
-      <div className="mt-8 overflow-x-scroll xl:overflow-x-hidden">
-        <table className="w-full">
+      <div className="mt-8 space-y-4 overflow-x-scroll xl:overflow-x-hidden">
+        <table>
           <thead>
             {table.getHeaderGroups().map((headerGroup) => (
               <tr key={headerGroup.id} className="!border-px !border-gray-400">
@@ -183,6 +218,7 @@ export default function AdminCertificateTable() {
               })}
           </tbody>
         </table>
+        <DataTablePagination table={table} />
       </div>
     </Card>
   );

@@ -1,6 +1,6 @@
 import React, { Suspense } from 'react';
 import prisma from '../../../../../lib/prisma';
-import ProceedConvertDocs from '../../../../../lib/convert-and-send';
+import GoogleApis from '../../../../../lib/googleapis';
 import { auth } from '../../../../../auth';
 import PageHandler from './pageHandler';
 import { Event } from '.prisma/client';
@@ -21,7 +21,7 @@ const DownloadCertificatePage = async ({
 
   if (!event || !person) return <div>Error Event / Person Not Found.</div>;
 
-  const processor = new ProceedConvertDocs(event, person);
+  const processor = new GoogleApis(event, person);
 
   const response = await processor.convertAndSavePdf();
 

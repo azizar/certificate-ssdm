@@ -114,20 +114,34 @@ export const getEventList = async () => {
   }
 };
 
-export const getEventDetail = async (id: number, page = 1, limit = 10) => {
+export const getEventDetail = async (
+  id: number,
+  page: number,
+  limit: number,
+) => {
+  if (page <= 1) page = 1;
   try {
     const event = await prisma.event.findFirstOrThrow({
       where: { id },
       include: {
-        certificates: true,
         person_absences: {
           include: { person: true },
           orderBy: { personId: 'asc' },
+          distinct: 'personId',
+          take: limit,
+          skip: limit * (page - 1),
         },
       },
     });
 
-    const absences = lodash.uniqBy([...event.person_absences], 'personId');
+    const totalUniquePersonAbsence = await prisma.eventPersonAbsence.findMany({
+      where: { eventId: event.id },
+      select: { eventId: true, personId: true, id: true },
+      distinct: 'personId',
+    });
+
+    // const absences = lodash.uniqBy([...event.person_absences], 'personId');
+    const absences = event.person_absences;
 
     const dayInterval = eachDayOfInterval({
       start: event.start_date,
@@ -140,10 +154,17 @@ export const getEventDetail = async (id: number, page = 1, limit = 10) => {
 
         const person = absence.person;
 
-        const absenceDate = event.person_absences.filter(
-          (val) =>
-            val.eventId === absence.eventId && val.personId === person.id,
-        );
+        // const absenceDate = event.person_absences.filter(
+        //   (val) =>
+        //     val.eventId === absence.eventId && val.personId === person.id,
+        // );
+
+        const absenceDate = await prisma.eventPersonAbsence.findMany({
+          where: {
+            personId: absence.personId,
+            eventId: absence.eventId,
+          },
+        });
 
         dayInterval.map((interval, i) => {
           let isValid = false;
@@ -153,7 +174,7 @@ export const getEventDetail = async (id: number, page = 1, limit = 10) => {
           if (currentAbs) isValid = true;
           data.push({
             day: i + 1,
-            date: interval.toDateString(),
+            date: interval.toLocaleDateString(),
             valid: isValid,
             absenceDate: currentAbs?.absenceDate ?? null,
           });
@@ -166,7 +187,13 @@ export const getEventDetail = async (id: number, page = 1, limit = 10) => {
       }),
     );
 
-    return { ...event, person_absences: formated };
+    return {
+      ...event,
+      person_absences: formated,
+      totalPage: Math.ceil(totalUniquePersonAbsence.length / limit),
+      page,
+      limit,
+    };
   } catch (error) {
     throw error;
   }
@@ -181,7 +208,7 @@ export const getEventByCode = async (code: string) => {
         person_responsibility: true,
         start_date: true,
         end_date: true,
-        qr_code: true
+        qr_code: true,
       },
     });
   } catch (error) {
@@ -195,7 +222,7 @@ export const personRegisterEvent = async (
   try {
     const session = await auth();
 
-    if (!session) await signOut()
+    if (!session) await signOut();
 
     const event = await prisma.event.findFirst({
       where: { qr_code: payload.event.qr_code },
@@ -216,7 +243,6 @@ export const personRegisterEvent = async (
         identifier: payload.identifier,
         title: payload.title,
         email: payload.email,
-        userId: user.id,
       },
     });
 
@@ -282,7 +308,7 @@ export const generateCertificate = async (
     }
 
     await generateCertQueue.add(
-      'generateCertQueue',
+      'Generating Certificate of Event ' + event.name,
       { event, person },
       { priority: 1, delay: 1000 },
     );

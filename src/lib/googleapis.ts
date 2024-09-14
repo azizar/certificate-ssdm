@@ -1,17 +1,22 @@
 import { Event } from 'lib/schema/event';
-import { google } from 'googleapis';
+import { google, Common } from 'googleapis';
 import nodemailer from 'nodemailer';
 import * as process from 'node:process';
 import { join, resolve } from 'path';
 import { Person } from '.prisma/client';
-import { GaxiosPromise } from 'gaxios';
-import { writeFileSync, mkdirSync, createWriteStream, existsSync } from 'fs';
+import {
+  mkdirSync,
+  createWriteStream,
+  existsSync,
+  unlinkSync,
+} from 'fs';
+import { GaxiosError } from 'googleapis-common';
 
-export default class ProceedConvertDocs {
+export default class GoogleApis {
   event: Event;
   person: Person;
 
-  constructor(event: Event, person: Person) {
+  constructor(event?: Event, person?: Person) {
     this.event = event;
     this.person = person;
   }
@@ -25,7 +30,120 @@ export default class ProceedConvertDocs {
     return await this.authenticate();
   }
 
-  public async convertAndSavePdf(): Promise<string> {
+  public async getDriveFolders() {
+    const auth = await this.authenticate();
+
+    const drive = google.drive({ version: 'v3', auth });
+
+    return drive.files.list({});
+  }
+
+  public async driveInstance() {
+    const auth = await this.authenticate();
+
+    return google.drive({ version: 'v3', auth });
+  }
+
+  public async presentationInstance() {
+    const auth = await this.authenticate();
+
+    return google.slides({ version: 'v1', auth });
+  }
+
+  public async convertAndSaveImage(): Promise<Record<string, any>> {
+    const auth = await this.authenticate();
+
+    const drive = google.drive({ version: 'v3', auth });
+
+    const docsId = this.event.google_docs_id;
+
+    try {
+      const selectedFile = await drive.files.get({ fileId: docsId });
+
+      const responseCopy = await drive.files.copy({
+        fileId: selectedFile.data.id,
+        auth,
+      });
+
+      const fileId = responseCopy.data.id;
+
+      const fileName =
+        this.person.email + '_' + this.event.qr_code + '_' + Date.now();
+
+      const updateFile = await drive.files.update({
+        fileId: fileId,
+        requestBody: {
+          name: fileName,
+        },
+      });
+
+      console.log('updated:', updateFile.data);
+
+      const finds = '{person}';
+      const replaces = this.person.name;
+
+      if (
+        updateFile.data.mimeType === 'application/vnd.google-apps.presentation'
+      ) {
+        await this.findAndReplaceTextInSlides(
+          auth,
+          updateFile.data.id,
+          finds,
+          replaces,
+        );
+      } else {
+        await this.findAndReplaceTextInDoc(
+          auth,
+          updateFile.data.id,
+          finds,
+          replaces,
+        );
+      }
+
+      const slides = google.slides({ version: 'v1', auth });
+
+      const pres = await slides.presentations.get({
+        presentationId: updateFile.data.id,
+      });
+
+      console.log(pres);
+
+      const response = await drive.files.export(
+        {
+          fileId,
+          mimeType: 'application/json',
+          alt: 'media',
+        },
+        { responseType: 'stream' },
+      );
+
+      const destPath = join(process.cwd(), 'certificates', this.event.qr_code);
+
+      if (!existsSync(destPath)) {
+        await mkdirSync(resolve(destPath), { recursive: true });
+      }
+
+      const ext = '.jpg';
+
+      const filePath = destPath.toString() + '/' + fileName + ext;
+
+      if (!existsSync(filePath)) {
+        unlinkSync(filePath);
+      }
+
+      const dest = createWriteStream(filePath);
+
+      await new Promise((resolve, reject) => {
+        response.data.on('error', reject).pipe(dest).on('finish', resolve);
+      });
+
+      return { filePath };
+    } catch (e) {
+      console.log('Error processing: ', e);
+    }
+  }
+
+  public async convertAndSavePdf(): Promise<Record<string, any>> {
     const auth = await this.authenticate();
 
     const drive = google.drive({ version: 'v3', auth });
@@ -37,16 +155,16 @@ export default class ProceedConvertDocs {
 
     const selectedDocs = await docs.documents.get({ documentId: docsId });
 
-    const response = await drive.files.copy({
+    const resultCopy = await drive.files.copy({
       fileId: selectedDocs.data.documentId,
       auth,
     });
-    const fileId = response.data.id;
+    const fileId = resultCopy.data.id;
 
     try {
-      const fileName = this.person.email + '_' + this.event.qr_code;
+      const fileName = this.person.name + '_' + this.event.qr_code;
 
-      await drive.files.update({
+      const responseUpdateName = await drive.files.update({
         fileId: fileId,
         requestBody: {
           name: fileName,
@@ -67,6 +185,7 @@ export default class ProceedConvertDocs {
       );
 
       const destPath = join(process.cwd(), 'certificates', this.event.qr_code);
+      const relativePath = join('certificates', this.event.qr_code);
 
       if (!existsSync(destPath)) {
         await mkdirSync(resolve(destPath), { recursive: true });
@@ -75,6 +194,10 @@ export default class ProceedConvertDocs {
       const ext = '.pdf';
 
       const filePath = destPath.toString() + '/' + fileName + ext;
+
+      if (existsSync(filePath)) {
+        unlinkSync(filePath);
+      }
 
       const dest = createWriteStream(filePath);
 
@@ -86,9 +209,18 @@ export default class ProceedConvertDocs {
           .on('finish', resolve);
       });
 
-      return filePath;
+      return {
+        filePath: join(relativePath, `${fileName + ext}`),
+        file: responseUpdateName.data,
+      };
     } catch (err) {
-      console.log('Error processing: ', err);
+      if ((err as GaxiosError).response) {
+        const error = err as Common.GaxiosError;
+        console.error(error.response);
+        throw error;
+      }
+
+      console.log('Unknown Error : ', err);
     }
   }
 
@@ -101,6 +233,7 @@ export default class ProceedConvertDocs {
         'https://www.googleapis.com/auth/drive',
         'https://www.googleapis.com/auth/drive.file',
         'https://www.googleapis.com/auth/drive.metadata.readonly',
+        'https://www.googleapis.com/auth/presentations',
       ],
     });
   }
@@ -152,6 +285,7 @@ export default class ProceedConvertDocs {
             {
               fileId: fileId,
               mimeType: 'application/pdf',
+              alt: 'media',
             },
             { responseType: 'stream' },
           );
@@ -190,6 +324,44 @@ export default class ProceedConvertDocs {
     });
 
     return info;
+  }
+
+  private async findAndReplaceTextInSlides(
+    auth,
+    documentId: string,
+    find: string | string[],
+    replace: string | string[],
+  ) {
+    let finds = Array.isArray(find) ? find : [find];
+    let replaces = Array.isArray(replace) ? replace : [replace];
+
+    try {
+      const docs = google.slides('v1');
+
+      let requests = [];
+
+      for (let i = 0; i < finds.length; i++) {
+        requests.push({
+          replaceAllText: {
+            containsText: {
+              text: finds[i],
+              matchCase: true,
+            },
+            replaceText: replaces[i],
+          },
+        });
+      }
+
+      return docs.presentations.batchUpdate({
+        auth: auth,
+        presentationId: documentId,
+        requestBody: {
+          requests: requests,
+        },
+      });
+    } catch (err) {
+      console.log('Error Batch Update', err);
+    }
   }
 
   private async findAndReplaceTextInDoc(

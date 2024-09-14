@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import ProceedConvertDocs from '../../../../../../../lib/convert-and-send';
+import GoogleApis from '../../../../../../../lib/googleapis';
 import prisma from '../../../../../../../lib/prisma';
 
 export async function POST(
@@ -21,7 +21,7 @@ export async function POST(
   });
 
   //
-  // const processor = new ProceedConvertDocs(event);
+  // const processor = new GoogleApis(event);
   //
   // const result = await processor.proceed();
 
