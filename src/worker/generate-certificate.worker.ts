@@ -108,6 +108,10 @@ const worker = new Worker(
         //   fileId: resultConvert.file.id,
         // });
 
+        await job.log(
+          'Result Convert :' + resultConvert?.file?.id || 'undefined',
+        );
+
         const responseDelete = await processor.deleteFile(
           resultConvert.file.id,
         );
@@ -119,8 +123,8 @@ const worker = new Worker(
         try {
           const currentCert = await prisma.certificate.create({
             data: {
-              eventId: +job.data.event.id,
-              personId: +job.data.person.id,
+              eventId: +event.id,
+              personId: +person.id,
               cert_url: resultConvert.filePath ?? 'error',
               status: 'SUCCESS',
               drive_url: '',
@@ -178,7 +182,7 @@ const worker = new Worker(
   },
   {
     connection,
-    concurrency: 1,
+    concurrency: 5,
     removeOnComplete: { count: 10000 },
   },
 );

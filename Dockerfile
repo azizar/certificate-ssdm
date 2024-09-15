@@ -1,84 +1,69 @@
+FROM node:20-alpine AS base
 
-ARG BASE=node:20-alpine
-
-FROM ${BASE} AS dependencies
-
-RUN apk update \
-	&& apk add --no-cache openssl curl libc6-compat \
-	&& rm -rf /var/lib/apt/lists/* \
-	&& rm -rf /var/cache/apk/*
-
-RUN openssl version && curl --version
-RUN curl -sf https://gobinaries.com/tj/node-prune | sh
-
+# Install dependencies only when needed
+FROM base AS deps
+# Check https://github.com/nodejs/docker-node/tree/b4117f9333da4138b03a546ec926ef50a31506c3#nodealpine to understand why libc6-compat might be needed.
+RUN apk add --no-cache libc6-compat
 WORKDIR /app
-COPY package.json yarn.lock ./
-COPY prisma ./prisma
 
-RUN yarn install --production=true --frozen-lockfile --ignore-scripts \
-    && npx prisma generate \
-    && node-prune \
-    && cp -R node_modules prod_node_modules \
-    && yarn install --production=false --prefer-offline \
-    && npx prisma generate \
-    && rm -rf prisma \
-    && yarn cache clean
+# Install dependencies based on the preferred package manager
+COPY package.json yarn.lock* package-lock.json* pnpm-lock.yaml* ./
+RUN \
+  if [ -f yarn.lock ]; then yarn --frozen-lockfile; \
+  elif [ -f package-lock.json ]; then npm ci; \
+  elif [ -f pnpm-lock.yaml ]; then corepack enable pnpm && pnpm i --frozen-lockfile; \
+  else echo "Lockfile not found." && exit 1; \
+  fi
 
-#------ target bulider
 
 # Rebuild the source code only when needed
-FROM ${BASE} AS builder
+FROM base AS builder
 WORKDIR /app
-
+COPY --from=deps /app/node_modules ./node_modules
 COPY . .
-COPY --from=dependencies /app/node_modules ./node_modules
 
-# only for SSG pages
-ARG ARG_DATABASE_URL
-ENV DATABASE_URL=$ARG_DATABASE_URL
+# Next.js collects completely anonymous telemetry data about general usage.
+# Learn more here: https://nextjs.org/telemetry
+# Uncomment the following line in case you want to disable telemetry during the build.
+# ENV NEXT_TELEMETRY_DISABLED=1
 
-ARG ARG_NEXTAUTH_URL
-ENV AUTH_URL=$ARG_NEXTAUTH_URL
-
-# debug
-RUN echo "DATABASE_URL=$DATABASE_URL"
-RUN echo "AUTH_URL=$AUTH_URL"
-
-# ENV DEBUG=*
-
-# npx prisma migrate deploy && npx prisma db seed - not needed
-# connect to existing db with data
-# build reads DATABASE_URL env, and needs dev dependencies
-RUN yarn build && rm -rf node_modules
-
-#------ target production
+RUN \
+  if [ -f yarn.lock ]; then yarn run build; \
+  elif [ -f package-lock.json ]; then npm run build; \
+  elif [ -f pnpm-lock.yaml ]; then corepack enable pnpm && pnpm run build; \
+  else echo "Lockfile not found." && exit 1; \
+  fi
 
 # Production image, copy all the files and run next
-FROM ${BASE} AS production
+FROM base AS runner
 WORKDIR /app
 
-ENV NODE_ENV production
+ENV NODE_ENV=production
+# Uncomment the following line in case you want to disable telemetry during runtime.
+# ENV NEXT_TELEMETRY_DISABLED=1
 
-COPY --from=builder /app/next.config.js ./
+RUN addgroup --system --gid 1001 nodejs
+RUN adduser --system --uid 1001 nextjs
+
 COPY --from=builder /app/public ./public
-COPY --from=builder /app/package.json ./package.json
-COPY --from=dependencies /app/prod_node_modules ./node_modules
-COPY --from=builder --chown=node:node /app/.next ./.next
-# use schema from container
-COPY --from=builder --chown=node:node /app/prisma ./prisma
 
-# volumes
-# COPY --from=builder --chown=node:node /app/uploads ./uploads
+# Set the correct permission for prerender cache
+RUN mkdir .next
+RUN chown nextjs:nodejs .next
 
-# in command in d-c.yml
-# RUN chmod 766 -R uploads
+# Automatically leverage output traces to reduce image size
+# https://nextjs.org/docs/advanced-features/output-file-tracing
+COPY --from=builder --chown=nextjs:nodejs /app/.next ./
+COPY --from=builder --chown=nextjs:nodejs /app/public ./public
+COPY --from=builder --chown=nextjs:nodejs /app/prisma ./prisma
 
-USER node
+USER nextjs
 
 EXPOSE 3000
-ENV PORT 3000
 
-ENV NEXT_TELEMETRY_DISABLED 1
+ENV PORT=3000
 
-# run migrate and seed here
+# server.js is created by next build from the standalone output
+# https://nextjs.org/docs/pages/api-reference/next-config-js/output
+ENV HOSTNAME="0.0.0.0"
 CMD ["yarn", "start"]
