@@ -118,6 +118,7 @@ const worker = new Worker(
       await job.updateProgress(70);
 
       await job.log('Deleting file on Drive');
+
       const googleService = new GoogleApi();
       const responseDelete = await googleService.driveService().files.delete({
         fileId: resultConvert.file.id,
@@ -137,7 +138,7 @@ const worker = new Worker(
   {
     connection,
     concurrency: 5,
-    removeOnComplete: { age: 10000 },
+    removeOnComplete: { count: 10000 },
   },
 );
 
@@ -161,22 +162,12 @@ worker.on('completed', async (job) => {
   await prisma.bullQueue.update({
     where: { id: job.id },
     data: {
-      status: job.getState().toString(),
+      status: await job.getState(),
       updatedAt: new Date(),
     },
   });
 
   await job.log('Updating data queue');
-
-  if (job.returnvalue.file.id) {
-    await job.log('Deleting file on Drive');
-    const googleService = new GoogleApi();
-    const responseDelete = await googleService.driveService().files.delete({
-      fileId: job.returnvalue.file.id,
-    });
-
-    await job.log('Deleting file on Drive. Status : ' + responseDelete.status);
-  }
 });
 
 worker.on('failed', async (job, err) => {
@@ -184,7 +175,7 @@ worker.on('failed', async (job, err) => {
   await prisma.bullQueue.update({
     where: { id: job.id },
     data: {
-      status: job.getState().toString(),
+      status: await job.getState(),
       updatedAt: new Date(),
     },
   });
