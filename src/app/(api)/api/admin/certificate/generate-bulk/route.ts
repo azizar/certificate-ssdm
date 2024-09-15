@@ -35,7 +35,7 @@ export const POST = auth(async function (req) {
     const opts: BulkJobOptions = {
       delay: 1000,
       removeOnFail: false,
-      jobId: `${event.qr_code}-${person.id}`,
+      // jobId: `${event.qr_code}-${person.id}`,
     };
 
     const queue = {

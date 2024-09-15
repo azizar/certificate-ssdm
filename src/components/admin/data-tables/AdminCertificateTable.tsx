@@ -46,8 +46,8 @@ const columns = [
       </p>
     ),
   }),
-  columnHelper.accessor('event.name', {
-    id: 'event.id',
+  columnHelper.accessor('Event.name', {
+    id: 'Event.id',
     header: () => (
       <p className="text-sm font-bold text-gray-600 dark:text-white">
         Event Name
@@ -59,8 +59,8 @@ const columns = [
       </div>
     ),
   }),
-  columnHelper.accessor('person.name', {
-    id: 'person.id',
+  columnHelper.accessor('Person.name', {
+    id: 'Person.id',
     header: () => (
       <p className="text-sm font-bold text-gray-600 dark:text-white">
         Person Name

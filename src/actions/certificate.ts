@@ -23,7 +23,7 @@ export const certificateList = async (props: Pagination) => {
     const data = await prisma.certificate.findMany({
       take: +limit,
       skip: +limit * (+page - 1),
-      include: { person: true, event: true },
+      include: { Person: true, Event: true },
     });
 
     const total = await prisma.certificate.count();
@@ -46,7 +46,7 @@ export const certificateListPerson = async () => {
   const certificates = await prisma.certificate.findMany({
     where: { personId: person.id },
     include: {
-      event: {
+      Event: {
         select: { id: true, name: true },
       },
     },

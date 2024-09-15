@@ -5,8 +5,9 @@
 // Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider     = "postgresql"
+  url          = env("DATABASE_URL")
+  relationMode = "prisma"
 }
 
 generator client {
@@ -96,9 +97,9 @@ model Person {
   title      String?
 
   EventPersonAbsence  EventPersonAbsence[]
-  Certificate         Certificate[]
   EventPersonRegister EventPersonRegister[]
   EventAbsence        EventAbsence[]
+  Certificate         Certificate[]
 }
 
 model Event {
@@ -111,10 +112,10 @@ model Event {
   qr_url                String?
   template_file         String?
   google_docs_id        String?
-  certificates          Certificate[]
   person_absences       EventPersonAbsence[]
   EventAbsence          EventAbsence[]
   registerPersons       EventPersonRegister[]
+  Certificate           Certificate[]
 }
 
 model EventPersonRegister {
@@ -150,14 +151,14 @@ model Certificate {
   id         Int      @id @default(autoincrement())
   eventId    Int
   personId   Int
-  event      Event    @relation(fields: [eventId], references: [id])
-  person     Person   @relation(fields: [personId], references: [id])
   status     String?
   cert_url   String?
   drive_url  String?
   drive_file String?
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
+  Person     Person   @relation(fields: [personId], references: [id])
+  Event      Event    @relation(fields: [eventId], references: [id])
 }
 
 model BullQueue {
@@ -166,6 +167,8 @@ model BullQueue {
   status    String   @default("Processing")
   error     String?
   value     String?
+  event_id  Int
+  person_id Int
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }

@@ -2,8 +2,8 @@ import { Worker, Queue } from 'bullmq';
 import Redis from 'ioredis';
 import GoogleApis from '../lib/googleapis';
 import { Event, Person } from '.prisma/client';
-import process from 'node:process';
 import prisma from '../lib/prisma';
+import { eventTypeCheckCompleted } from 'next/dist/telemetry/events';
 
 export const connection = new Redis(process.env.REDIS_URL!, {
   maxRetriesPerRequest: null,
@@ -27,120 +27,139 @@ export const generateCertQueue = new Queue(queueName, {
 const worker = new Worker(
   queueName, // this is the queue name, the first string parameter we provided for Queue()
   async (job) => {
-    const data = job?.data;
-
-    const status = await job.getState();
-
-    await prisma.bullQueue.upsert({
-      where: {
-        id: job.id,
-      },
-      create: {
-        id: job.id,
-        data: JSON.stringify({ job }),
-        status: status.toString(),
-      },
-      update: {
-        data: JSON.stringify({ job }),
-        status: status.toString(),
-        updatedAt: new Date(),
-      },
-    });
-
-    // await job.updateProgress({message:"event saved to database"})
-
-    const event: Event = data.event;
-    const person: Person = data.person;
-    const forceCreate = data.force_create || false;
-
-    const check = await prisma.certificate.findFirst({
-      where: { eventId: event.id, personId: person.id },
-    });
-
-    await job.updateProgress(10);
-
-    if (check && !forceCreate) {
-      await job.log('Certificate Already Exists');
-      await job.updateProgress(100);
-      return check.cert_url;
-    }
-    await job.updateProgress(20);
-
-    const processor = new GoogleApis(event, person);
-
     try {
-      await job.updateProgress(30);
-      const resultConvert = await processor.convertAndSavePdf();
-      await job.updateProgress(40);
+      const data = job?.data;
+      const event: Event = data.event;
+      const person: Person = data.person;
 
-      // const checkCertificate = await prisma.certificate.findFirst({
-      //   where: {
-      //     eventId: event.id,
-      //     personId: person.id,
-      //   },
-      // });
+      if (person.id && event.id) {
+        const status = await job.getState();
 
-      await job.updateProgress(50);
-      //Create
+        const bullq = await prisma.bullQueue.create({
+          data: {
+            data: JSON.stringify({ job }),
+            status: status.toString(),
+            person_id: +job.data.person.id,
+            event_id: +job.data.event.id,
+          },
+        });
 
-      await job.updateProgress(60);
+        // await job.updateProgress({message:"event saved to database"})
 
-      // if (!checkCertificate) {
-      //
-      // } else {
-      //
-      //   await job.log('Certificate found ! ID: ' + checkCertificate.id);
-      //
-      //   await prisma.certificate.update({
-      //     where: { id: checkCertificate.id },
-      //     data: {
-      //       cert_url: resultConvert.filePath,
-      //       status: 'SUCCESS',
-      //       drive_url: '',
-      //       drive_file: '',
-      //     },
-      //   });
-      //   await job.updateProgress(60);
-      // }
+        const forceCreate = data.force_create || false;
 
-      await job.updateProgress(70);
+        const check = await prisma.certificate.findFirst({
+          where: { eventId: event.id, personId: person.id },
+        });
 
-      await job.log('Deleting file on Drive');
+        await job.updateProgress(10);
 
-      // const googleService = new GoogleApi();
-      // const responseDelete = await googleService.driveService().files.delete({
-      //   fileId: resultConvert.file.id,
-      // });
+        if (check && !forceCreate) {
+          await job.log('Certificate Already Exists');
+          await job.updateProgress(100);
+          return check.cert_url;
+        }
+        await job.updateProgress(20);
 
-      const responseDelete = await processor.deleteFile(resultConvert.file.id);
+        const processor = new GoogleApis(event, person);
 
-      await job.log(
-        'Deleting file on Drive. Status : ' + responseDelete.status,
-      );
+        await job.updateProgress(30);
+        const resultConvert = await processor.convertAndSavePdf();
+        await job.updateProgress(40);
 
-      const cert = await prisma.certificate.create({
-        data: {
-          eventId: +job.data.event.id,
-          personId: +job.data.person.id,
-          cert_url: resultConvert.filePath ?? 'error',
-          status: 'SUCCESS',
-          drive_url: '',
-          drive_file: '',
-        },
-      });
+        // const checkCertificate = await prisma.certificate.findFirst({
+        //   where: {
+        //     eventId: event.id,
+        //     personId: person.id,
+        //   },
+        // });
 
-      console.log({ cert });
+        await job.updateProgress(50);
+        //Create
 
-      await job.updateProgress(100);
+        await job.updateProgress(60);
 
-      return resultConvert;
+        // if (!checkCertificate) {
+        //
+        // } else {
+        //
+        //   await job.log('Certificate found ! ID: ' + checkCertificate.id);
+        //
+        //   await prisma.certificate.update({
+        //     where: { id: checkCertificate.id },
+        //     data: {
+        //       cert_url: resultConvert.filePath,
+        //       status: 'SUCCESS',
+        //       drive_url: '',
+        //       drive_file: '',
+        //     },
+        //   });
+        //   await job.updateProgress(60);
+        // }
+
+        await job.updateProgress(70);
+
+        await job.log('Deleting file on Drive');
+
+        // const googleService = new GoogleApi();
+        // const responseDelete = await googleService.driveService().files.delete({
+        //   fileId: resultConvert.file.id,
+        // });
+
+        const responseDelete = await processor.deleteFile(
+          resultConvert.file.id,
+        );
+
+        await job.log(
+          'Deleting file on Drive. Status : ' + responseDelete.status,
+        );
+
+        try {
+          const currentCert = await prisma.certificate.findFirst({
+            where: {
+              eventId: +job.data.event.id,
+              personId: +job.data.person.id,
+            },
+          });
+
+          const cert = await prisma.certificate.upsert({
+            where: {
+              id: currentCert.id,
+            },
+            create: {
+              eventId: +job.data.event.id,
+              personId: +job.data.person.id,
+              cert_url: resultConvert.filePath ?? 'error',
+              status: 'SUCCESS',
+              drive_url: '',
+              drive_file: '',
+            },
+            update: {
+              cert_url: resultConvert.filePath ?? 'error',
+              status: 'SUCCESS' + '_UPDATED at ' + Date.now() + '',
+              drive_url: '',
+              drive_file: '',
+            },
+          });
+
+          console.log('JOB : ' + job.id + 'CertID: ' + cert.id);
+
+          await job.log('Cert Created with ID: ' + cert.id);
+        } catch (e) {
+          throw e;
+        }
+
+        await job.updateProgress(100);
+
+        return { resultConvert, bullq };
+      }
     } catch (e) {
       throw e;
     }
   },
   {
     connection,
-    // concurrency: 10,
+    concurrency: 1,
     removeOnComplete: { count: 10000 },
   },
 );
@@ -163,7 +182,7 @@ const worker = new Worker(
 
 worker.on('completed', async (job) => {
   const update = await prisma.bullQueue.update({
-    where: { id: job.id },
+    where: { id: job.returnvalue.bullq.id },
     data: {
       status: await job.getState(),
       updatedAt: new Date(),
@@ -191,7 +210,7 @@ worker.on('completed', async (job) => {
 worker.on('failed', async (job, err) => {
   console.log(`Job ID:${job.id} has failed with ${err.message}`);
   await prisma.bullQueue.update({
-    where: { id: job.id },
+    where: { id: job.returnvalue.bullq.id },
     data: {
       status: await job.getState(),
       updatedAt: new Date(),
