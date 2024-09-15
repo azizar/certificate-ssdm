@@ -100,7 +100,9 @@ const worker = new Worker(
         });
         await job.updateProgress(60);
       } else {
+        
         await job.log('Certificate found ! ID: ' + checkCertificate.id);
+
         await prisma.certificate.update({
           where: { id: checkCertificate.id },
           data: {
@@ -115,17 +117,15 @@ const worker = new Worker(
 
       await job.updateProgress(70);
 
-      if (resultConvert.file.id) {
-        await job.log('Deleting file on Drive');
-        const googleService = new GoogleApi();
-        const responseDelete = await googleService.driveService().files.delete({
-          fileId: resultConvert.file.id,
-        });
+      await job.log('Deleting file on Drive');
+      const googleService = new GoogleApi();
+      const responseDelete = await googleService.driveService().files.delete({
+        fileId: resultConvert.file.id,
+      });
 
-        await job.log(
-          'Deleting file on Drive. Status : ' + responseDelete.status,
-        );
-      }
+      await job.log(
+        'Deleting file on Drive. Status : ' + responseDelete.status,
+      );
 
       await job.updateProgress(100);
 
@@ -136,14 +136,14 @@ const worker = new Worker(
   },
   {
     connection,
-    concurrency: 10,
+    concurrency: 5,
     removeOnComplete: { age: 10000 },
   },
 );
 
-worker.on('ready', async () => {
-  console.log('Worker ready...');
-});
+// worker.on('ready', async () => {
+//   console.log('Worker ready...');
+// });
 
 // worker.on('progress', (job, progress) => {
 //   console.log(`Worker progress: ${progress} Job ID: ${job.id}`);
@@ -157,14 +157,37 @@ worker.on('ready', async () => {
 //   console.log(`Workers stalled id:${jobId}, prev: ${prev}`);
 // });
 
-// worker.on('completed', (job) => {
-//   console.log(`Job ID:${job.id} has completed!`, {
-//     job: JSON.stringify(job.returnvalue),
-//   });
-// });
+worker.on('completed', async (job) => {
+  await prisma.bullQueue.update({
+    where: { id: job.id },
+    data: {
+      status: job.getState().toString(),
+      updatedAt: new Date(),
+    },
+  });
 
-worker.on('failed', (job, err) => {
+  await job.log('Updating data queue');
+
+  if (job.returnvalue.file.id) {
+    await job.log('Deleting file on Drive');
+    const googleService = new GoogleApi();
+    const responseDelete = await googleService.driveService().files.delete({
+      fileId: job.returnvalue.file.id,
+    });
+
+    await job.log('Deleting file on Drive. Status : ' + responseDelete.status);
+  }
+});
+
+worker.on('failed', async (job, err) => {
   console.log(`Job ID:${job.id} has failed with ${err.message}`);
+  await prisma.bullQueue.update({
+    where: { id: job.id },
+    data: {
+      status: job.getState().toString(),
+      updatedAt: new Date(),
+    },
+  });
 });
 
 export default worker;

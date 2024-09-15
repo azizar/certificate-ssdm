@@ -1,6 +1,6 @@
 {
-  "name": "horizon-tailwind-react-nextjs",
-  "version": "2.1.0",
+  "name": "certificate-app",
+  "version": "0.0.1",
   "private": true,
   "dependencies": {
     "@auth/core": "^0.34.2",
@@ -44,7 +44,7 @@
     "libreoffice-convert": "^1.6.0",
     "libreoffice-file-converter": "^2.3.4",
     "lodash": "^4.17.21",
-    "next": "^14.0.2",
+    "next": "^14.2.11",
     "next-auth": "^5.0.0-beta.20",
     "next-qrcode": "^2.5.1",
     "next-transpile-modules": "^9.0.0",
@@ -72,7 +72,7 @@
   },
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
+    "build": "next build --experimental-debug-memory-usage",
     "start": "next start",
     "start:prod": "yarn build && yarn start",
     "export": "next export",

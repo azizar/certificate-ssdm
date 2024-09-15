@@ -3,21 +3,25 @@ import { NextResponse } from 'next/server';
 import { Person } from '.prisma/client';
 import prisma from '../../../../../../lib/prisma';
 
-export const GET = auth(async (req, res) => {
+export const GET = auth(async (req) => {
   const payload = [];
-  for (let i = 1; i <= 20000; i++) {
-    const counter = i.toString().padStart(5, '0')
-    const person = {
-      name: `Person Test ${counter}`,
-      identifier: `person${counter}@test.dev`,
-      email: `person${counter}@test.dev`,
-      title: 'S.Dev',
-    };
-    payload.push(person);
+
+  if (req.nextUrl.searchParams.get('code') === 'KetupatSayur123!') {
+    for (let i = 1; i <= 20000; i++) {
+      const counter = i.toString().padStart(5, '0');
+      const person = {
+        name: `Person Test ${counter}`,
+        identifier: `person${counter}@test.dev`,
+        email: `person${counter}@test.dev`,
+        title: 'S.Dev',
+      };
+      payload.push(person);
+    }
+
+    await prisma.person.createMany({
+      data: payload,
+    });
   }
 
-  // await prisma.person.createMany({
-  //   data: payload,
-  // });
   return NextResponse.json({ payload });
 });
