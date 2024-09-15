@@ -121,52 +121,43 @@ const worker = new Worker(
         );
 
         try {
-          const currentCert = await prisma.certificate.create({
-            data: {
-              eventId: +event.id,
-              personId: +person.id,
-              cert_url: resultConvert.filePath ?? 'error',
-              status: 'SUCCESS',
-              drive_url: '',
-              drive_file: '',
+          await job.log('Check current cert.');
+
+          const chertificates = await prisma.certificate.findMany({
+            where: {
+              AND: [{ eventId: +event.id }, { personId: person.id }],
             },
           });
-          // const currentCert = await prisma.certificate.findFirst({
-          //   where: {
-          //     eventId: +job.data.event.id,
-          //     personId: +job.data.person.id,
-          //   },
-          // });
 
-          await job.log('Check current cert:' + currentCert?.id || 'undefined');
+          if (chertificates && chertificates.length > 0) {
+            const currentCert = await prisma.certificate.update({
+              where: { id: chertificates[0].id },
+              data: {
+                cert_url: resultConvert.filePath ?? 'error',
+                status: 'SUCCESS_UPDATE_AT_' + Date.now() + '',
+                drive_url: '',
+                drive_file: '',
+              },
+            });
 
-          // const cert = await prisma.certificate.upsert({
-          //   where: {
-          //     id: currentCert?.id,
-          //   },
-          //   create: {
-          //     eventId: +job.data.event.id,
-          //     personId: +job.data.person.id,
-          //     cert_url: resultConvert.filePath ?? 'error',
-          //     status: 'SUCCESS',
-          //     drive_url: '',
-          //     drive_file: '',
-          //   },
-          //   update: {
-          //     cert_url: resultConvert.filePath ?? 'error',
-          //     status: 'SUCCESS' + '_UPDATED at ' + Date.now() + '',
-          //     drive_url: '',
-          //     drive_file: '',
-          //   },
-          // });
-
-          console.log(
-            'JOB : ' + job.id + 'CertID: ' + currentCert?.id || 'undefined',
-          );
-
-          await job.log(
-            'Cert Created with ID: ' + currentCert?.id || 'undefined',
-          );
+            await job.log(
+              'Cert updated with ID: ' + currentCert?.id || 'undefined',
+            );
+          } else {
+            const currentCert = await prisma.certificate.create({
+              data: {
+                eventId: +event.id,
+                personId: +person.id,
+                cert_url: resultConvert.filePath ?? 'error',
+                status: 'SUCCESS',
+                drive_url: '',
+                drive_file: '',
+              },
+            });
+            await job.log(
+              'Cert created with ID: ' + currentCert?.id || 'undefined',
+            );
+          }
         } catch (e) {
           throw e;
         }

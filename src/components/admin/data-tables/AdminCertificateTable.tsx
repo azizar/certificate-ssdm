@@ -20,9 +20,10 @@ import { useQuery } from 'react-query';
 
 import { Event, Person } from '.prisma/client';
 
-import { Option, Select } from '@material-tailwind/react';
+import { Button, Option, Select } from '@material-tailwind/react';
 import { DataTablePagination } from '../../table-pagination';
 import { usePagination } from '../../../hooks/use-pagination';
+import { MdNavigateBefore, MdNavigateNext } from 'react-icons/md';
 
 type CertificateTableRow = {
   id: number;
@@ -121,11 +122,9 @@ export default function AdminCertificateTable() {
     keepPreviousData: true,
   });
 
-  console.log(data);
-
   useEffect(() => {
     refetch();
-  }, [filter, pagination]);
+  }, [filter, page, limit]);
 
   const table = useReactTable({
     data: data?.data?.data || [],
@@ -220,7 +219,33 @@ export default function AdminCertificateTable() {
               })}
           </tbody>
         </table>
-        <DataTablePagination table={table} />
+        {/*<DataTablePagination table={table} />*/}
+        <div className={'flex w-full justify-end gap-2'}>
+          <Button
+            size={'md'}
+            onClick={() => {
+              onPaginationChange((prevState) => ({
+                pageSize: limit,
+                pageIndex: prevState.pageIndex - 1,
+              }));
+            }}
+            disabled={page === 1}
+          >
+            <MdNavigateBefore />
+          </Button>
+          <Button
+            size={'md'}
+            onClick={() => {
+              onPaginationChange((prevState) => ({
+                pageSize: limit,
+                pageIndex: prevState.pageIndex + 1,
+              }));
+            }}
+            disabled={page === data?.totalPage}
+          >
+            <MdNavigateNext />
+          </Button>
+        </div>
       </div>
     </Card>
   );

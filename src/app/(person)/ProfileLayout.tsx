@@ -64,10 +64,23 @@ const Navbar = (props: {
   return (
     <nav className="sticky top-0 z-40 flex flex-row flex-wrap items-center justify-between rounded-xl bg-white/10 p-2 backdrop-blur-xl dark:bg-[#0b14374d]">
       <div className="ml-1 hidden h-2.5 font-poppins text-[26px] font-bold text-navy-700  dark:text-white md:block ">
-        <div className={'flex'}>
-          <span>Cert</span>
-          <MdGeneratingTokens className="h-6 w-6" />
-          <span className="font-medium">Gen</span>
+        <div className={'flex items-center gap-2'}>
+          {/*<Image*/}
+          {/*  src={'/logo-polri.png'}*/}
+          {/*  width={40}*/}
+          {/*  height={40}*/}
+          {/*  alt={'Logo Polri'}*/}
+          {/*/>*/}
+          <Image
+            src={'/logo-ssdm.png'}
+            width={40}
+            height={40}
+            alt={'Logo Polri'}
+          />
+          <span>Bagrimdik PNS</span>
+
+          {/*<MdGeneratingTokens className="h-6 w-6" />*/}
+          {/*<span className="font-medium">Gen</span>*/}
         </div>
       </div>
 

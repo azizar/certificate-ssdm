@@ -5,6 +5,8 @@ import Links from './components/Links';
 
 import { MdGeneratingTokens } from 'react-icons/md';
 import { IRoute } from 'types/navigation';
+import Image from 'next/image';
+import React from 'react';
 
 function SidebarHorizon(props: { routes: IRoute[]; [x: string]: any }) {
   const { routes, open, setOpen } = props;
@@ -21,11 +23,29 @@ function SidebarHorizon(props: { routes: IRoute[]; [x: string]: any }) {
         <HiX />
       </span>
 
-      <div className={`mx-[56px] mt-[50px] flex items-center`}>
+      <div className={`ml-[20px] mr-[24px] mt-[50px] flex items-center`}>
         <div className="ml-1 mt-1 inline-flex h-2.5 font-poppins text-[26px]  font-bold text-navy-700 dark:text-white">
-          Cert
-          <MdGeneratingTokens className="h-6 w-6" />
-          <span className="font-medium">Gen</span>
+          {/*Cert*/}
+          {/*<MdGeneratingTokens className="h-6 w-6" />*/}
+          {/*<span className="font-medium">Gen</span>*/}
+          <div className={'flex items-center gap-2'}>
+            {/*<Image*/}
+            {/*  src={'/logo-polri.png'}*/}
+            {/*  width={40}*/}
+            {/*  height={40}*/}
+            {/*  alt={'Logo Polri'}*/}
+            {/*/>*/}
+            <Image
+              src={'/logo-ssdm.png'}
+              width={40}
+              height={40}
+              alt={'Logo Polri'}
+            />
+            <span>Bagrimdik PNS</span>
+
+            {/*<MdGeneratingTokens className="h-6 w-6" />*/}
+            {/*<span className="font-medium">Gen</span>*/}
+          </div>
         </div>
       </div>
       <div className="mb-7 mt-[58px] h-px bg-gray-300 dark:bg-white/30" />
