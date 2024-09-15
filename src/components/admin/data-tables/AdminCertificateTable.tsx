@@ -29,6 +29,8 @@ type CertificateTableRow = {
   cert_url: string;
   event: Event;
   person: Person;
+  createdAt: Date;
+  updatedAt: Date;
 };
 
 const columnHelper = createColumnHelper<CertificateTableRow>();
@@ -79,7 +81,7 @@ const columns = [
     ),
     cell: (info) => (
       <p className="text-sm font-bold text-navy-700 dark:text-white">
-        {info.getValue()}
+        {new Date(info.getValue()).toLocaleString('id') || info.getValue()}
       </p>
     ),
   }),
@@ -92,7 +94,7 @@ const columns = [
     ),
     cell: (info) => (
       <p className="text-sm font-bold text-navy-700 dark:text-white">
-        {info.getValue()}
+        {new Date(info.getValue()).toLocaleString('id') || info.getValue()}
       </p>
     ),
   }),
@@ -166,7 +168,7 @@ export default function AdminCertificateTable() {
       </div>
 
       <div className="mt-8 space-y-4 overflow-x-scroll xl:overflow-x-hidden">
-        <table>
+        <table className={'w-full'}>
           <thead>
             {table.getHeaderGroups().map((headerGroup) => (
               <tr key={headerGroup.id} className="!border-px !border-gray-400">

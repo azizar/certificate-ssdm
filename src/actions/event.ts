@@ -3,15 +3,11 @@ import { mkdirSync, writeFileSync } from 'fs';
 import { Event, EventRegister, EventSchema } from 'lib/schema/event';
 import { join, resolve } from 'path';
 import { generateRandomString } from 'utils';
-
 import prisma from 'lib/prisma';
-
 import { eachDayOfInterval } from 'date-fns';
-
-import lodash from 'lodash';
 import { auth, signOut } from '../auth';
-
 import { generateCertQueue } from '../worker/generate-certificate.worker';
+import { BulkJobOptions } from 'bullmq';
 
 export const createEvent = async (formData: FormData) => {
   const rawFormData = Object.fromEntries(formData);
@@ -286,32 +282,27 @@ export const generateCertificate = async (
   try {
     const event = await prisma.event.findFirstOrThrow({
       where: { id: eventId },
-      include: {
-        person_absences: {
-          where: { personId: personId },
-          include: { person: true },
-          take: 1,
-        },
-        certificates: {
-          where: {
-            AND: [{ personId: personId }, { eventId: eventId }],
-          },
-          take: 1,
-        },
+    });
+
+    const person = await prisma.person.findFirstOrThrow({
+      where: {
+        id: personId,
       },
     });
 
-    const person = event?.person_absences[0]?.person;
+    const opts: BulkJobOptions = {
+      delay: 1000,
+      removeOnFail: false,
+      jobId: `${event.qr_code}-${person.id}`,
+    };
 
-    if (!person) {
-      throw new Error('Person not found.');
-    }
+    const queue = {
+      name: 'Generating Certificate ' + event.name + ' to: ' + person.name,
+      data: { event, person, force_create: true },
+      opts,
+    };
 
-    await generateCertQueue.add(
-      'Generating Certificate of Event ' + event.name,
-      { event, person },
-      { priority: 1, delay: 1000 },
-    );
+    await generateCertQueue.add(queue.name, queue.data, opts);
 
     /**
      * TODO:

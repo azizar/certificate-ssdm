@@ -74,46 +74,35 @@ const worker = new Worker(
       const resultConvert = await processor.convertAndSavePdf();
       await job.updateProgress(40);
 
-      const checkCertificate = await prisma.certificate.findFirst({
-        where: {
-          eventId: event.id,
-          personId: person.id,
-        },
-      });
+      // const checkCertificate = await prisma.certificate.findFirst({
+      //   where: {
+      //     eventId: event.id,
+      //     personId: person.id,
+      //   },
+      // });
 
       await job.updateProgress(50);
+      //Create
 
-      await job.log('Check Certificate');
+      await job.updateProgress(60);
 
-      if (!checkCertificate) {
-        await job.log('Certificate not found !');
-        //Create
-        await prisma.certificate.create({
-          data: {
-            eventId: event.id,
-            personId: person.id,
-            cert_url: resultConvert.filePath,
-            status: 'SUCCESS',
-            drive_url: '',
-            drive_file: '',
-          },
-        });
-        await job.updateProgress(60);
-      } else {
-        
-        await job.log('Certificate found ! ID: ' + checkCertificate.id);
-
-        await prisma.certificate.update({
-          where: { id: checkCertificate.id },
-          data: {
-            cert_url: resultConvert.filePath,
-            status: 'SUCCESS',
-            drive_url: '',
-            drive_file: '',
-          },
-        });
-        await job.updateProgress(60);
-      }
+      // if (!checkCertificate) {
+      //
+      // } else {
+      //
+      //   await job.log('Certificate found ! ID: ' + checkCertificate.id);
+      //
+      //   await prisma.certificate.update({
+      //     where: { id: checkCertificate.id },
+      //     data: {
+      //       cert_url: resultConvert.filePath,
+      //       status: 'SUCCESS',
+      //       drive_url: '',
+      //       drive_file: '',
+      //     },
+      //   });
+      //   await job.updateProgress(60);
+      // }
 
       await job.updateProgress(70);
 
@@ -127,8 +116,6 @@ const worker = new Worker(
       await job.log(
         'Deleting file on Drive. Status : ' + responseDelete.status,
       );
-
-      await job.updateProgress(100);
 
       return resultConvert;
     } catch (e) {
@@ -167,7 +154,20 @@ worker.on('completed', async (job) => {
     },
   });
 
+  await prisma.certificate.create({
+    data: {
+      eventId: job.data.event.id,
+      personId: job.data.person.id,
+      cert_url: job.returnvalue.filePath ?? "error",
+      status: 'SUCCESS',
+      drive_url: '',
+      drive_file: '',
+    },
+  });
+
   await job.log('Updating data queue');
+
+  await job.updateProgress(100);
 });
 
 worker.on('failed', async (job, err) => {

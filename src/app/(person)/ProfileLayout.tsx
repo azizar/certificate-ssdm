@@ -8,21 +8,14 @@ import { getActiveNavbar, getActiveRoute } from '../../utils/navigation';
 import Footer from '../../components/footer/Footer';
 import { usePathname } from 'next/navigation';
 import { MdGeneratingTokens } from 'react-icons/md';
-import NavLink from '../../components/link/NavLink';
-import { FiAlignJustify, FiSearch } from 'react-icons/fi';
+import { FiSearch } from 'react-icons/fi';
 import Dropdown from '../../components/dropdown';
-import {
-  IoMdInformationCircleOutline,
-  IoMdNotificationsOutline,
-} from 'react-icons/io';
+import { IoMdNotificationsOutline } from 'react-icons/io';
 import { BsArrowBarUp } from 'react-icons/bs';
-import navbarimage from '/public/img/layout/Navbar.png';
 import { RiMoonFill, RiSunFill } from 'react-icons/ri';
 import Image from 'next/image';
 
-import avatar from '/public/img/avatars/avatar4.png';
-import { signIn, signOut } from '../../auth';
-import { FaGoogle } from 'react-icons/fa';
+import avatar from '/public/default-user.png';
 import ButtonLogout from '../../components/ui/button-logout';
 
 export default function PersonLayout({ children }: { children: ReactNode }) {
@@ -165,13 +158,13 @@ const Navbar = (props: {
               width="2"
               height="20"
               className="h-10 w-10 rounded-full"
-              src={avatar}
+              src={session?.data?.user?.image || avatar}
               alt="Elon Musk"
             />
           }
           classNames={'py-2 top-8 -left-[180px] w-max'}
         >
-          <div className="flex h-48 w-56 flex-col justify-start rounded-[20px] bg-white bg-cover bg-no-repeat shadow-xl shadow-shadow-500 dark:!bg-navy-700 dark:text-white dark:shadow-none">
+          <div className="full flex w-56 flex-col justify-start rounded-[20px] bg-white bg-cover bg-no-repeat shadow-xl shadow-shadow-500 dark:!bg-navy-700 dark:text-white dark:shadow-none">
             <div className="ml-4 mt-3">
               <div className="flex items-center gap-2">
                 <p className="text-sm font-bold text-navy-700 dark:text-white">
@@ -179,21 +172,21 @@ const Navbar = (props: {
                 </p>{' '}
               </div>
             </div>
-            <div className="mt-3 h-px w-full bg-gray-200 dark:bg-white/20 " />
+            {/*<div className="mt-3 h-px w-full bg-gray-200 dark:bg-white/20 " />*/}
 
             <div className="m-2 mt-3 flex flex-col">
-              <a
-                href=" "
-                className="text-sm text-gray-800 dark:text-white hover:dark:text-white"
-              >
-                Profile Settings
-              </a>
-              <a
-                href=" "
-                className="mt-3 text-sm text-gray-800 dark:text-white hover:dark:text-white"
-              >
-                Newsletter Settings
-              </a>
+              {/*<a*/}
+              {/*  href=" "*/}
+              {/*  className="text-sm text-gray-800 dark:text-white hover:dark:text-white"*/}
+              {/*>*/}
+              {/*  Profile Settings*/}
+              {/*</a>*/}
+              {/*<a*/}
+              {/*  href=" "*/}
+              {/*  className="mt-3 text-sm text-gray-800 dark:text-white hover:dark:text-white"*/}
+              {/*>*/}
+              {/*  Newsletter Settings*/}
+              {/*</a>*/}
               <ButtonLogout />
             </div>
           </div>

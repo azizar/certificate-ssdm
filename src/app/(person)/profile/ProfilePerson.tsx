@@ -13,8 +13,6 @@ import {
   Typography,
 } from '@material-tailwind/react';
 
-
-
 import Image from 'next/image';
 import { BiCalendarEvent } from 'react-icons/bi';
 import avatar from '/public/default-user.png';
@@ -52,7 +50,7 @@ const ProfileOverview = () => {
                     width="2"
                     height="20"
                     className="h-full w-full rounded-full"
-                    src={avatar}
+                    src={session?.data?.user?.image || avatar}
                     alt="User Avatar"
                   />
                 </div>
@@ -110,7 +108,7 @@ const ProfileOverview = () => {
                       </ListItemPrefix>
                       <div className="">
                         <Typography variant={'h6'}>
-                          Event {data?.event?.name}
+                          {data?.event?.name}
                         </Typography>
                       </div>
 
