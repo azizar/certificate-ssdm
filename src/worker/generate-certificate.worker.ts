@@ -117,20 +117,8 @@ const worker = new Worker(
         );
 
         try {
-          const currentCert = await prisma.certificate.findFirst({
-            where: {
-              eventId: +job.data.event.id,
-              personId: +job.data.person.id,
-            },
-          });
-
-          await job.log('Check current cert:' + currentCert?.id || "undefined");
-
-          const cert = await prisma.certificate.upsert({
-            where: {
-              id: currentCert?.id,
-            },
-            create: {
+          const currentCert = await prisma.certificate.create({
+            data: {
               eventId: +job.data.event.id,
               personId: +job.data.person.id,
               cert_url: resultConvert.filePath ?? 'error',
@@ -138,17 +126,43 @@ const worker = new Worker(
               drive_url: '',
               drive_file: '',
             },
-            update: {
-              cert_url: resultConvert.filePath ?? 'error',
-              status: 'SUCCESS' + '_UPDATED at ' + Date.now() + '',
-              drive_url: '',
-              drive_file: '',
-            },
           });
+          // const currentCert = await prisma.certificate.findFirst({
+          //   where: {
+          //     eventId: +job.data.event.id,
+          //     personId: +job.data.person.id,
+          //   },
+          // });
 
-          console.log('JOB : ' + job.id + 'CertID: ' + cert.id);
+          await job.log('Check current cert:' + currentCert?.id || 'undefined');
 
-          await job.log('Cert Created with ID: ' + cert.id);
+          // const cert = await prisma.certificate.upsert({
+          //   where: {
+          //     id: currentCert?.id,
+          //   },
+          //   create: {
+          //     eventId: +job.data.event.id,
+          //     personId: +job.data.person.id,
+          //     cert_url: resultConvert.filePath ?? 'error',
+          //     status: 'SUCCESS',
+          //     drive_url: '',
+          //     drive_file: '',
+          //   },
+          //   update: {
+          //     cert_url: resultConvert.filePath ?? 'error',
+          //     status: 'SUCCESS' + '_UPDATED at ' + Date.now() + '',
+          //     drive_url: '',
+          //     drive_file: '',
+          //   },
+          // });
+
+          console.log(
+            'JOB : ' + job.id + 'CertID: ' + currentCert?.id || 'undefined',
+          );
+
+          await job.log(
+            'Cert Created with ID: ' + currentCert?.id || 'undefined',
+          );
         } catch (e) {
           throw e;
         }
