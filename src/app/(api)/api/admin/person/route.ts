@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '../../../../../lib/prisma';
+import { auth } from '../../../../../auth';
 
-export async function GET(req: NextRequest) {
+export const GET = auth(async (req) => {
   try {
     const limit = +req.nextUrl.searchParams.get('limit') || 10;
     const page = +req.nextUrl.searchParams.get('page') || 1;
@@ -19,6 +20,6 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ data, limit, page, total });
   } catch (e) {
     console.log(e);
-    throw e
+    throw e;
   }
-}
+});
