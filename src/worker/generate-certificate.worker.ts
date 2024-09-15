@@ -124,9 +124,11 @@ const worker = new Worker(
             },
           });
 
+          await job.log('Check current cert:' + currentCert?.id || "undefined");
+
           const cert = await prisma.certificate.upsert({
             where: {
-              id: currentCert.id,
+              id: currentCert?.id,
             },
             create: {
               eventId: +job.data.event.id,
@@ -153,9 +155,10 @@ const worker = new Worker(
 
         await job.updateProgress(100);
 
-        return { resultConvert, bullq };
+        return resultConvert;
       }
     } catch (e) {
+      console.log(e);
       throw e;
     }
   },
@@ -183,16 +186,18 @@ const worker = new Worker(
 // });
 
 worker.on('completed', async (job) => {
-  if (job?.returnvalue?.bullq?.id) {
-    const update = await prisma.bullQueue.update({
-      where: { id: job.returnvalue.bullq.id },
-      data: {
-        status: await job.getState(),
-        updatedAt: new Date(),
-      },
-    });
-    await job.log('DB Queue ID:' + update?.id);
-  }
+  // if (job?.returnvalue?.bullq?.id) {
+  //   const update = await prisma.bullQueue.update({
+  //     where: { id: job.returnvalue.bullq.id },
+  //     data: {
+  //       status: await job.getState(),
+  //       updatedAt: new Date(),
+  //     },
+  //   });
+  //   await job.log('DB Queue ID:' + update?.id);
+  // }
+
+  await job.log('Completed');
 
   // const cert = await prisma.certificate.create({
   //   data: {
