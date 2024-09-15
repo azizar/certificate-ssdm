@@ -108,7 +108,7 @@ const ProfileOverview = () => {
                       </ListItemPrefix>
                       <div className="">
                         <Typography variant={'h6'}>
-                          {data?.event?.name}
+                          {data?.Event?.name}
                         </Typography>
                       </div>
 
@@ -132,7 +132,7 @@ const ButtonDownload = ({ event }: { event }) => {
     try {
       setIsLoading(true);
       const response = await fetch(
-        '/api/my-certificate/download/' + data?.event.id,
+        '/api/my-certificate/download/' + data?.Event.id,
       );
 
       const blob = await response.blob();
