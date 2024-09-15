@@ -39,10 +39,12 @@ const worker = new Worker(
           data: {
             data: JSON.stringify({ job }),
             status: status.toString(),
-            person_id: +job.data.person.id,
-            event_id: +job.data.event.id,
+            person_id: +person.id,
+            event_id: +event.id,
           },
         });
+
+        await job.log('BullQ ID: ' + bullq.id || 'error');
 
         // await job.updateProgress({message:"event saved to database"})
 
@@ -181,15 +183,16 @@ const worker = new Worker(
 // });
 
 worker.on('completed', async (job) => {
-  const update = await prisma.bullQueue.update({
-    where: { id: job.returnvalue.bullq.id },
-    data: {
-      status: await job.getState(),
-      updatedAt: new Date(),
-    },
-  });
-
-  await job.log('DB Queue ID:' + update?.id);
+  if (job?.returnvalue?.bullq?.id) {
+    const update = await prisma.bullQueue.update({
+      where: { id: job.returnvalue.bullq.id },
+      data: {
+        status: await job.getState(),
+        updatedAt: new Date(),
+      },
+    });
+    await job.log('DB Queue ID:' + update?.id);
+  }
 
   // const cert = await prisma.certificate.create({
   //   data: {
