@@ -32,6 +32,7 @@ import { FaSync } from 'react-icons/fa';
 import { usePagination } from '../../../../../hooks/use-pagination';
 import { useEffect } from 'react';
 import GenerateCertificate from './components/generate-certificate';
+import axios from 'axios';
 
 const EventDetailsPage = ({ params }: { params: { id: string } }) => {
   const router = useRouter();
@@ -48,7 +49,7 @@ const EventDetailsPage = ({ params }: { params: { id: string } }) => {
   }, [page]);
 
   if (isFetching) {
-    return <FiLoader className="mx-auto animate-spin mt-8" />;
+    return <FiLoader className="mx-auto mt-8 animate-spin" />;
   }
 
   return (
@@ -173,8 +174,10 @@ const EventAbsence = ({ data }: { data: IAbsenceData[] }) => {
       eventId: number;
       personId: number;
     }) => {
-      console.log({ eventId, personId });
-      return await generateCertificate(eventId, personId);
+      return axios.post('/api/admin/certificate/generate', {
+        eventId,
+        personId,
+      });
     },
   });
   return (

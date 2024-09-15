@@ -4,7 +4,6 @@ import GoogleApis from '../lib/googleapis';
 import { Event, Person } from '.prisma/client';
 import process from 'node:process';
 import prisma from '../lib/prisma';
-import { GoogleApi } from '../lib/googleapi';
 
 export const connection = new Redis(process.env.REDIS_URL!, {
   maxRetriesPerRequest: null,
@@ -108,14 +107,31 @@ const worker = new Worker(
 
       await job.log('Deleting file on Drive');
 
-      const googleService = new GoogleApi();
-      const responseDelete = await googleService.driveService().files.delete({
-        fileId: resultConvert.file.id,
-      });
+      // const googleService = new GoogleApi();
+      // const responseDelete = await googleService.driveService().files.delete({
+      //   fileId: resultConvert.file.id,
+      // });
+
+      const responseDelete = await processor.deleteFile(resultConvert.file.id);
 
       await job.log(
         'Deleting file on Drive. Status : ' + responseDelete.status,
       );
+
+      const cert = await prisma.certificate.create({
+        data: {
+          eventId: +job.data.event.id,
+          personId: +job.data.person.id,
+          cert_url: resultConvert.filePath ?? 'error',
+          status: 'SUCCESS',
+          drive_url: '',
+          drive_file: '',
+        },
+      });
+
+      console.log({ cert });
+
+      await job.updateProgress(100);
 
       return resultConvert;
     } catch (e) {
@@ -124,7 +140,7 @@ const worker = new Worker(
   },
   {
     connection,
-    concurrency: 5,
+    // concurrency: 10,
     removeOnComplete: { count: 10000 },
   },
 );
@@ -146,7 +162,7 @@ const worker = new Worker(
 // });
 
 worker.on('completed', async (job) => {
-  await prisma.bullQueue.update({
+  const update = await prisma.bullQueue.update({
     where: { id: job.id },
     data: {
       status: await job.getState(),
@@ -154,18 +170,20 @@ worker.on('completed', async (job) => {
     },
   });
 
-  await prisma.certificate.create({
-    data: {
-      eventId: job.data.event.id,
-      personId: job.data.person.id,
-      cert_url: job.returnvalue.filePath ?? "error",
-      status: 'SUCCESS',
-      drive_url: '',
-      drive_file: '',
-    },
-  });
+  await job.log('DB Queue ID:' + update?.id);
 
-  await job.log('Updating data queue');
+  // const cert = await prisma.certificate.create({
+  //   data: {
+  //     eventId: job.data.event.id,
+  //     personId: job.data.person.id,
+  //     cert_url: job.returnvalue.filePath ?? 'error',
+  //     status: 'SUCCESS',
+  //     drive_url: '',
+  //     drive_file: '',
+  //   },
+  // });
+  //
+  // await job.log('Cert ID:' + cert?.id);
 
   await job.updateProgress(100);
 });

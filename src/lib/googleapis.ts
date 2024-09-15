@@ -4,12 +4,7 @@ import nodemailer from 'nodemailer';
 import * as process from 'node:process';
 import { join, resolve } from 'path';
 import { Person } from '.prisma/client';
-import {
-  mkdirSync,
-  createWriteStream,
-  existsSync,
-  unlinkSync,
-} from 'fs';
+import { mkdirSync, createWriteStream, existsSync, unlinkSync } from 'fs';
 import { GaxiosError } from 'googleapis-common';
 
 export default class GoogleApis {
@@ -141,6 +136,14 @@ export default class GoogleApis {
     } catch (e) {
       console.log('Error processing: ', e);
     }
+  }
+
+  public async deleteFile(fileId: string) {
+    const auth = await this.authenticate();
+
+    const drive = google.drive({ version: 'v3', auth });
+
+    return drive.files.delete({ fileId });
   }
 
   public async convertAndSavePdf(): Promise<Record<string, any>> {
