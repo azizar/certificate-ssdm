@@ -5,7 +5,7 @@ export async function GET(req: NextRequest) {
   try {
     const limit = +req.nextUrl.searchParams.get('limit') || 10;
     const page = +req.nextUrl.searchParams.get('page') || 1;
-    const q = req.nextUrl.searchParams.get('q') || undefined;
+    const q = req.nextUrl.searchParams.get('q') || '';
 
     const search = { name: { search: q } };
 
@@ -18,6 +18,7 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.json({ data, limit, page, total });
   } catch (e) {
-    throw e;
+    console.log(e);
+    throw e
   }
 }

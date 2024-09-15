@@ -109,7 +109,7 @@ export default function AdminCertificateTable() {
   const { data, isFetching, refetch } = useQuery({
     queryKey: ['certificate-table', filter],
     queryFn: () =>
-      axios.get('http://localhost:3000/api/admin/certificate', {
+      axios.get('/api/admin/certificate', {
         params: { ...filter, page, limit },
         headers: {
           Accept: 'application/json',

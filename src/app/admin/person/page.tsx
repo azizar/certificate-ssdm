@@ -21,14 +21,10 @@ import {
   SortingState,
   useReactTable,
 } from '@tanstack/react-table';
-import { FiLoader } from 'react-icons/fi';
 import { useQuery } from 'react-query';
-
-import { Event, Person } from '.prisma/client';
 
 import { Button, Input, Option, Select } from '@material-tailwind/react';
 import { PersonTableInterface } from './interface';
-import Loading from '../../loading';
 import { usePagination } from '../../../hooks/use-pagination';
 import { MdNavigateBefore, MdNavigateNext } from 'react-icons/md';
 import { useDebounce } from 'use-debounce';
@@ -68,9 +64,8 @@ const columns = [
       </div>
     ),
   }),
-]; // eslint-disable-next-line
+];
 
-// const columns = columnsDataCheck;
 export default function PersonTable() {
   const [sorting, setSorting] = React.useState<SortingState>([]);
   const { pagination, onPaginationChange, page, limit } = usePagination();
@@ -79,7 +74,7 @@ export default function PersonTable() {
   const { data, isFetching, refetch } = useQuery({
     queryKey: ['certificate-table', value, page, limit],
     queryFn: () =>
-      axios.get('http://localhost:3000/api/admin/person', {
+      axios.get('/api/admin/person', {
         params: { q: value, page, limit },
         headers: {
           Accept: 'application/json',

@@ -20,10 +20,6 @@ const nextConfig = {
     // Make ENV
     unoptimized: true,
   },
-  experimental:{
-    cpus: 1,
-    workerThreads: false
-  }
 };
 
 module.exports = nextConfig;
