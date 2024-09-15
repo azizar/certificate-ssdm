@@ -96,7 +96,7 @@ function EventRegister({ event }: { event: Event }) {
             >
               <Typography>
                 {' '}
-                Anda asuk sebagai : {session.data?.user?.email || ''}
+                Anda Login sebagai : {session.data?.user?.email || ''}
               </Typography>
             </Alert>
 
@@ -117,6 +117,14 @@ function EventRegister({ event }: { event: Event }) {
                     className="items-center"
                   >
                     <Typography variant="h6">Event Telah Berakhir.</Typography>
+                  </Alert>
+                ) : new Date().getTime() < event.start_date.getTime() ? (
+                  <Alert
+                    color="yellow"
+                    icon={<MdWarning />}
+                    className="items-center"
+                  >
+                    <Typography variant="h6">Event Belum Dimulai.</Typography>
                   </Alert>
                 ) : (
                   <div className="space-y-4">

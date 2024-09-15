@@ -1,6 +1,6 @@
 import NavLink from 'components/link/NavLink';
 import Image from 'next/image';
-import authImg from '/public/logo-bw.png';
+import authImg from '/public/logo-ssdm.png';
 function Default(props: { maincard: JSX.Element; showBackButton: boolean }) {
   const { maincard, showBackButton } = props;
   return (
@@ -30,7 +30,7 @@ function Default(props: { maincard: JSX.Element; showBackButton: boolean }) {
           <div className="absolute right-0 hidden h-full min-h-screen md:block lg:w-[49vw] 2xl:w-[44vw]">
             <div
               // style={{ backgroundImage: authImg ? `url(${authImg})` : '' }}
-              className={`absolute flex h-full w-full items-center justify-center bg-gradient-to-br from-brand-400 to-brand-600 bg-cover bg-center lg:rounded-bl-[120px] xl:rounded-bl-[200px]`}
+              className={`absolute flex h-full w-full items-center justify-center bg-gradient-to-br from-yellow-500 to-yellow-700 bg-cover bg-center lg:rounded-bl-[120px] xl:rounded-bl-[200px]`}
             >
               <div className="relative flex w-full justify-center">
                 {/* <div
