@@ -50,8 +50,10 @@ function EventRegister({ event }: { event: Event }) {
         onError(error, variables, context) {
           console.error(error);
           alert('Absensi gagal !');
+          setSuccess(false);
         },
         onSuccess(data, variables, context) {
+          console.log(data?.status)
           alert('Absensi sukses.');
           setSuccess(true);
         },

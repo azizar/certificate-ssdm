@@ -259,17 +259,17 @@ export const personRegisterEvent = async (
       },
     });
 
-    console.log({ existing });
+    if (existing) return { status: 'Update', data: existing };
 
-    if (existing) throw new Error('Anda telah absen untuk hari ini.');
-
-    return await prisma.eventPersonAbsence.create({
+    const data = await prisma.eventPersonAbsence.create({
       data: {
         eventId: event.id,
         personId: person.id,
         absenceDate: new Date(),
       },
     });
+
+    return { status: 'Create', data };
   } catch (error) {
     throw error;
   }
