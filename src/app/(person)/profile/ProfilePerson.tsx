@@ -21,19 +21,19 @@ import { FaDownload } from 'react-icons/fa';
 import { useQuery } from 'react-query';
 import { useSession } from 'next-auth/react';
 import { SetupPersonProfile } from './SetupPersonProfile';
+import { AiFillSafetyCertificate } from 'react-icons/ai';
 
 const ProfileOverview = () => {
   const session = useSession();
-  const { data: certificates, isFetching } = useQuery({
+  const { data, isFetching } = useQuery({
     queryKey: ['my-certificate'],
     queryFn: async () => {
       const resp = await fetch('/api/my-certificate');
-      const { data } = await resp.json();
-      return data;
+      return await resp.json();
     },
   });
 
-  if (certificates)
+  if (data)
     return (
       <div className="flex w-full flex-col gap-5 lg:gap-5">
         {/*<pre>{JSON.stringify(session, null, 2)}</pre>*/}
@@ -70,7 +70,7 @@ const ProfileOverview = () => {
               <div className="mb-3 mt-6 flex gap-4 md:!gap-14">
                 <div className="flex flex-col items-center justify-center">
                   <h4 className="text-2xl font-bold text-navy-700 dark:text-white">
-                    0
+                    {data?.events ?? '0'}
                   </h4>
                   <p className="text-sm font-normal text-gray-600">
                     Event Attended
@@ -78,7 +78,7 @@ const ProfileOverview = () => {
                 </div>
                 <div className="flex flex-col items-center justify-center">
                   <h4 className="text-2xl font-bold text-navy-700 dark:text-white">
-                    {certificates.length || 0}
+                    {data?.certificates?.length ?? 0}
                   </h4>
                   <p className="text-sm font-normal text-gray-600">
                     Certificates
@@ -97,14 +97,14 @@ const ProfileOverview = () => {
                 <Typography variant={'lead'}> Your Certificates</Typography>
               </div>
               <List>
-                {certificates.length >= 1 &&
-                  certificates.map((data, i) => (
+                {data?.certificates?.length >= 1 &&
+                  data?.certificates?.map((data, i) => (
                     <ListItem
                       key={i}
                       className={'hover:cursor-default hover:bg-transparent'}
                     >
                       <ListItemPrefix>
-                        <Typography variant={'h6'}>{i + 1}.</Typography>
+                        <AiFillSafetyCertificate />
                       </ListItemPrefix>
                       <div className="">
                         <Typography variant={'h6'}>
@@ -131,9 +131,10 @@ const ButtonDownload = ({ event }: { event }) => {
   const handleDownload = async (data) => {
     try {
       setIsLoading(true);
-      const response = await fetch(
-        '/api/my-certificate/download/' + data?.Event.id,
-      );
+      const response = await fetch('/api/my-certificate/download', {
+        method: 'POST',
+        body: JSON.stringify({ eventId: data.eventId }),
+      });
 
       const blob = await response.blob();
 

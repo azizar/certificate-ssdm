@@ -10,8 +10,6 @@ export async function GET() {
     where: { email: session.user.email },
   });
 
-
-
   if (!person) {
     return NextResponse.json({ data: [] });
   }
@@ -25,5 +23,10 @@ export async function GET() {
     },
   });
 
-  return NextResponse.json({ data: certificates });
+  const events = await prisma.eventPersonAbsence.findMany({
+    where: { personId: person.id },
+    distinct: 'eventId',
+  });
+
+  return NextResponse.json({ certificates, events: events.length });
 }

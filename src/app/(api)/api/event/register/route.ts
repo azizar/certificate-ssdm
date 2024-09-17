@@ -13,10 +13,6 @@ export const POST = auth(async (req) => {
       where: { qr_code: payload.event.qr_code },
     });
 
-    const user = await prisma.user.findFirstOrThrow({
-      where: { email: currentUser.email },
-    });
-
     const person = await prisma.person.upsert({
       where: { email: payload.email },
       update: {

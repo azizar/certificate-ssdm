@@ -8,15 +8,20 @@ import InputField from 'components/fields/InputField';
 import { Event, EventRegister, EventRegisterSchema } from 'lib/schema/event';
 import { useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
-import { FaCheckCircle, FaHome } from 'react-icons/fa';
+import { FaCheckCircle } from 'react-icons/fa';
 import { MdWarning } from 'react-icons/md';
 import { useMutation } from 'react-query';
 import { useSession } from 'next-auth/react';
-import Link from 'next/link';
 import axios from 'axios';
+import { Session } from '@auth/core/types';
 
-function EventRegister({ event }: { event: Event }) {
-  const session = useSession();
+export const EventRegisterForm = ({
+  event,
+  session,
+}: {
+  event: Event;
+  session: Session;
+}) => {
   const {
     control,
     handleSubmit,
@@ -24,14 +29,14 @@ function EventRegister({ event }: { event: Event }) {
   } = useForm<EventRegister>({
     resolver: zodResolver(EventRegisterSchema),
     defaultValues: {
-      full_name: session.data?.user?.name || '',
-      identifier: session.data?.user?.email || '',
+      full_name: session?.user?.name || '',
+      identifier: session?.user?.email || '',
       title: '',
-      email: session.data?.user?.email || '',
+      email: session?.user?.email || '',
     },
     values: {
-      identifier: session.data?.user?.email || '',
-      email: session.data?.user?.email || '',
+      identifier: session?.user?.email || '',
+      email: session?.user?.email || '',
     },
   });
 
@@ -40,7 +45,7 @@ function EventRegister({ event }: { event: Event }) {
   const registerMutation = useMutation({
     mutationKey: ['register-event'],
     mutationFn: async (data: any) => {
-      return axios.post('/api/event/register',data)
+      return axios.post('/api/event/register', data);
     },
   });
 
@@ -54,7 +59,7 @@ function EventRegister({ event }: { event: Event }) {
           setSuccess(false);
         },
         onSuccess(data, variables, context) {
-          console.log(data?.status)
+          console.log(data?.status);
           alert('Absensi sukses.');
           setSuccess(true);
         },
@@ -99,11 +104,31 @@ function EventRegister({ event }: { event: Event }) {
             >
               <Typography>
                 {' '}
-                Anda Login sebagai : {session.data?.user?.email || ''}
+                Anda Login sebagai : {session?.user?.email || ''}
               </Typography>
             </Alert>
 
-            {success ? (
+            {new Date().getTime() > event.end_date.getTime() && (
+              <Alert
+                color="yellow"
+                icon={<MdWarning />}
+                className="items-center"
+              >
+                <Typography variant="h6">Event Telah Berakhir</Typography>
+              </Alert>
+            )}
+
+            {new Date().getTime() < event.start_date.getTime() && (
+              <Alert
+                color="yellow"
+                icon={<MdWarning />}
+                className="items-center"
+              >
+                <Typography variant="h6">Event Belum Dimulai</Typography>
+              </Alert>
+            )}
+
+            {success && (
               <Alert
                 color="green"
                 icon={<FaCheckCircle />}
@@ -111,141 +136,119 @@ function EventRegister({ event }: { event: Event }) {
               >
                 Absensi Kegiatan Berhasil.
               </Alert>
-            ) : (
-              <>
-                {new Date().getTime() > event.end_date.getTime() ? (
-                  <Alert
-                    color="yellow"
-                    icon={<MdWarning />}
-                    className="items-center"
-                  >
-                    <Typography variant="h6">Event Telah Berakhir.</Typography>
-                  </Alert>
-                ) : new Date().getTime() < event.start_date.getTime() ? (
-                  <Alert
-                    color="yellow"
-                    icon={<MdWarning />}
-                    className="items-center"
-                  >
-                    <Typography variant="h6">Event Belum Dimulai.</Typography>
-                  </Alert>
-                ) : (
-                  <div className="space-y-4">
-                    <form
-                      onSubmit={handleSubmit(onSubmit)}
-                      className="space-y-4"
-                    >
-                      {/*<Controller*/}
-                      {/*  control={control}*/}
-                      {/*  name="identifier"*/}
-                      {/*  render={({*/}
-                      {/*    field: { onChange, onBlur, value, ref },*/}
-                      {/*    formState,*/}
-                      {/*    fieldState,*/}
-                      {/*  }) => (*/}
-                      {/*    <>*/}
-                      {/*      <InputField*/}
-                      {/*        id="identifier"*/}
-                      {/*        label="NIP / NRP"*/}
-                      {/*        placeholder="12345678"*/}
-                      {/*        variant="auth"*/}
-                      {/*        state={errors.identifier?.message ? 'error' : ''}*/}
-                      {/*        onChange={onChange}*/}
-                      {/*      />*/}
-                      {/*      <small className="text-red-600">*/}
-                      {/*        {errors?.identifier?.message}*/}
-                      {/*      </small>*/}
-                      {/*    </>*/}
-                      {/*  )}*/}
-                      {/*/>*/}
-                      {/*<Controller*/}
-                      {/*  control={control}*/}
-                      {/*  name="email"*/}
-                      {/*  render={({*/}
-                      {/*    field: { onChange, onBlur, value, ref },*/}
-                      {/*    formState,*/}
-                      {/*    fieldState,*/}
-                      {/*  }) => (*/}
-                      {/*    <>*/}
-                      {/*      <InputField*/}
-                      {/*        id="email"*/}
-                      {/*        label="Email"*/}
-                      {/*        placeholder="email@mail.com"*/}
-                      {/*        variant="auth"*/}
-                      {/*        state={errors.identifier?.message ? 'error' : ''}*/}
-                      {/*        onChange={onChange}*/}
-                      {/*      />*/}
-                      {/*      <small className="text-red-600">*/}
-                      {/*        {errors?.email?.message}*/}
-                      {/*      </small>*/}
-                      {/*    </>*/}
-                      {/*  )}*/}
-                      {/*/>*/}
-                      <Controller
-                        control={control}
-                        name="full_name"
-                        render={({
-                          field: { onChange, onBlur, value, ref },
-                          formState,
-                          fieldState,
-                        }) => (
-                          <>
-                            <InputField
-                              id="full_name"
-                              label="Nama Lengkap"
-                              placeholder="John Doe"
-                              variant="auth"
-                              onChange={onChange}
-                              state={errors?.full_name?.message ? 'error' : ''}
-                            />
-                            <small className="text-red-600">
-                              {errors?.full_name?.message}
-                            </small>
-                          </>
-                        )}
-                      />
-                      <Controller
-                        control={control}
-                        name="title"
-                        render={({
-                          field: { onChange, onBlur, value, ref },
-                          formState,
-                          fieldState,
-                        }) => (
-                          <>
-                            <InputField
-                              id="gelar"
-                              label="Gelar Lengkap"
-                              placeholder="S.Pd"
-                              variant="auth"
-                              onChange={onChange}
-                            />
-
-                            <small className="text-red-600">
-                              {errors?.title?.message}
-                            </small>
-                          </>
-                        )}
-                      />
-
-                      <Button
-                        disabled={registerMutation.isLoading}
-                        loading={registerMutation.isLoading}
-                        className="linear w-full rounded-xl bg-brand-500 py-3 text-base font-medium text-white transition duration-200 hover:bg-brand-600 active:bg-brand-700 dark:bg-brand-400 dark:text-white dark:hover:bg-brand-300 dark:active:bg-brand-200"
-                        type="submit"
-                      >
-                        ABSEN SEKARANG
-                      </Button>
-                    </form>
-                  </div>
-                )}
-              </>
             )}
+
+            {new Date().getTime() > event.start_date.getTime() &&
+              new Date().getTime() < event.end_date.getTime() && (
+                <div className="space-y-4">
+                  <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+                    {/*<Controller*/}
+                    {/*  control={control}*/}
+                    {/*  name="identifier"*/}
+                    {/*  render={({*/}
+                    {/*    field: { onChange, onBlur, value, ref },*/}
+                    {/*    formState,*/}
+                    {/*    fieldState,*/}
+                    {/*  }) => (*/}
+                    {/*    <>*/}
+                    {/*      <InputField*/}
+                    {/*        id="identifier"*/}
+                    {/*        label="NIP / NRP"*/}
+                    {/*        placeholder="12345678"*/}
+                    {/*        variant="auth"*/}
+                    {/*        state={errors.identifier?.message ? 'error' : ''}*/}
+                    {/*        onChange={onChange}*/}
+                    {/*      />*/}
+                    {/*      <small className="text-red-600">*/}
+                    {/*        {errors?.identifier?.message}*/}
+                    {/*      </small>*/}
+                    {/*    </>*/}
+                    {/*  )}*/}
+                    {/*/>*/}
+                    {/*<Controller*/}
+                    {/*  control={control}*/}
+                    {/*  name="email"*/}
+                    {/*  render={({*/}
+                    {/*    field: { onChange, onBlur, value, ref },*/}
+                    {/*    formState,*/}
+                    {/*    fieldState,*/}
+                    {/*  }) => (*/}
+                    {/*    <>*/}
+                    {/*      <InputField*/}
+                    {/*        id="email"*/}
+                    {/*        label="Email"*/}
+                    {/*        placeholder="email@mail.com"*/}
+                    {/*        variant="auth"*/}
+                    {/*        state={errors.identifier?.message ? 'error' : ''}*/}
+                    {/*        onChange={onChange}*/}
+                    {/*      />*/}
+                    {/*      <small className="text-red-600">*/}
+                    {/*        {errors?.email?.message}*/}
+                    {/*      </small>*/}
+                    {/*    </>*/}
+                    {/*  )}*/}
+                    {/*/>*/}
+                    <Controller
+                      control={control}
+                      name="full_name"
+                      render={({
+                        field: { onChange, onBlur, value, ref },
+                        formState,
+                        fieldState,
+                      }) => (
+                        <>
+                          <InputField
+                            id="full_name"
+                            label="Nama Lengkap"
+                            placeholder="John Doe"
+                            variant="auth"
+                            onChange={onChange}
+                            state={errors?.full_name?.message ? 'error' : ''}
+                          />
+                          <small className="text-red-600">
+                            {errors?.full_name?.message}
+                          </small>
+                        </>
+                      )}
+                    />
+                    <Controller
+                      control={control}
+                      name="title"
+                      render={({
+                        field: { onChange, onBlur, value, ref },
+                        formState,
+                        fieldState,
+                      }) => (
+                        <>
+                          <InputField
+                            id="gelar"
+                            label="Gelar Lengkap"
+                            placeholder="S.Pd"
+                            variant="auth"
+                            onChange={onChange}
+                          />
+
+                          <small className="text-red-600">
+                            {errors?.title?.message}
+                          </small>
+                        </>
+                      )}
+                    />
+
+                    <Button
+                      disabled={registerMutation.isLoading}
+                      loading={registerMutation.isLoading}
+                      className="linear w-full rounded-xl bg-brand-500 py-3 text-base font-medium text-white transition duration-200 hover:bg-brand-600 active:bg-brand-700 dark:bg-brand-400 dark:text-white dark:hover:bg-brand-300 dark:active:bg-brand-200"
+                      type="submit"
+                    >
+                      ABSEN SEKARANG
+                    </Button>
+                  </form>
+                </div>
+              )}
           </div>
         </div>
       }
     />
   );
-}
-
-export default EventRegister;
+};

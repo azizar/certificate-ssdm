@@ -20,6 +20,7 @@ const nextConfig = {
     // Make ENV
     unoptimized: true,
   },
+  // output: 'standalone',
 };
 
 module.exports = nextConfig;

@@ -1,48 +1,64 @@
 'use client';
 import MiniCalendar from 'components/calendar/MiniCalendar';
-import { IoMdHome } from 'react-icons/io';
+import { IoMdDocument, IoMdHome } from 'react-icons/io';
 import { IoDocuments } from 'react-icons/io5';
-import { MdBarChart, MdDashboard } from 'react-icons/md';
+import {
+  MdBarChart,
+  MdCalendarToday,
+  MdDashboard,
+  MdPerson,
+} from 'react-icons/md';
 
 import TaskCard from 'components/admin/default/TaskCard';
 import Widget from 'components/widget/Widget';
+import { useQuery } from 'react-query';
+import axios from 'axios';
 
 const Dashboard = () => {
+  const { data } = useQuery({
+    queryKey: ['home-dashboard'],
+    queryFn: async () => {
+      return axios.get('/api/dashboard');
+    },
+  });
+
+  const result = data?.data;
+
   return (
     <div>
       {/* Card widget */}
 
       <div className="mt-3 grid grid-cols-1 gap-5 md:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-3 3xl:grid-cols-6">
         <Widget
-          icon={<MdBarChart className="h-7 w-7" />}
-          title={'Earnings'}
-          subtitle={'$340.5'}
+          icon={<MdPerson className="h-7 w-7" />}
+          title={'Persons'}
+          subtitle={result?.totalPerson ?? '0'}
         />
         <Widget
           icon={<IoDocuments className="h-6 w-6" />}
-          title={'Spend this month'}
-          subtitle={'$642.39'}
+          title={'Certificate'}
+          subtitle={result?.totalCertificate ?? '0'}
         />
         <Widget
-          icon={<MdBarChart className="h-7 w-7" />}
-          title={'Sales'}
-          subtitle={'$574.34'}
+          icon={<MdCalendarToday className="h-7 w-7" />}
+          title={'Event'}
+          subtitle={result?.totalEvent ?? '0'}
         />
-        <Widget
-          icon={<MdDashboard className="h-6 w-6" />}
-          title={'Your Balance'}
-          subtitle={'$1,000'}
-        />
-        <Widget
-          icon={<MdBarChart className="h-7 w-7" />}
-          title={'New Tasks'}
-          subtitle={'145'}
-        />
-        <Widget
-          icon={<IoMdHome className="h-6 w-6" />}
-          title={'Total Projects'}
-          subtitle={'$2433'}
-        />
+        {/*<Widget*/}
+        {/*  icon={<MdDashboard className="h-6 w-6" />}*/}
+        {/*  title={'Your Balance'}*/}
+        {/*  subtitle={'$1,000'}*/}
+        {/*/>*/}
+        {/*<Widget*/}
+        {/*  icon={<MdBarChart className="h-7 w-7" />}*/}
+        {/*  title={'New Tasks'}*/}
+        {/*  subtitle={'145'}*/}
+        {/*/>*/}
+        {/*<Widget*/}
+        {/*  icon={<IoMdHome className="h-6 w-6" />}*/}
+        {/*  title={'Total Projects'}*/}
+        {/*  subtitle={'$2433'}*/}
+        {/*/>*/}
       </div>
 
       {/* Charts */}

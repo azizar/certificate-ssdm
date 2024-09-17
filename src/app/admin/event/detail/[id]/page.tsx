@@ -14,9 +14,11 @@ import CardMenu from 'components/card/CardMenu';
 import { useRouter } from 'next/navigation';
 import { FiLoader } from 'react-icons/fi';
 import {
+  MdCalendarToday,
   MdGeneratingTokens,
   MdNavigateBefore,
   MdNavigateNext,
+  MdPerson,
 } from 'react-icons/md';
 import { useMutation, useQuery } from 'react-query';
 import { FormEvent } from '../../form-event';
@@ -33,6 +35,8 @@ import { usePagination } from '../../../../../hooks/use-pagination';
 import { useEffect } from 'react';
 import GenerateCertificate from './components/generate-certificate';
 import axios from 'axios';
+import Widget from '../../../../../components/widget/Widget';
+import { IoDocuments } from 'react-icons/io5';
 
 const EventDetailsPage = ({ params }: { params: { id: string } }) => {
   const router = useRouter();
@@ -96,6 +100,24 @@ const EventDetailsPage = ({ params }: { params: { id: string } }) => {
         </div>
         <div className="col-span-2">
           <Card extra={'w-full h-full px-6 pb-6 sm:overflow-x-auto'}>
+            <div className="mt-6 grid grid-cols-1 gap-5 md:grid-cols-2 rounded-lg">
+              <Widget
+                icon={<MdPerson className="h-7 w-7" />}
+                title={'Persons'}
+                subtitle={data?.totalPerson + '' ?? '0'}
+              />
+              <Widget
+                icon={<IoDocuments className="h-6 w-6" />}
+                title={'Certificate'}
+                subtitle={data?.totalCertificate + '' ?? '0'}
+              />
+              {/*<Widget*/}
+              {/*  icon={<MdCalendarToday className="h-7 w-7" />}*/}
+              {/*  title={'Event'}*/}
+              {/*  subtitle={data?.totalEvent ?? '0'}*/}
+              {/*/>*/}
+            </div>
+            <div className={'w-full border-b'}></div>
             <GenerateCertificate event={data} />
           </Card>
         </div>

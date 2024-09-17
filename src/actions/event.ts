@@ -130,6 +130,10 @@ export const getEventDetail = async (
       },
     });
 
+    const totalCertificate = await prisma.certificate.count({
+      where: { eventId: event.id },
+    });
+
     const totalUniquePersonAbsence = await prisma.eventPersonAbsence.findMany({
       where: { eventId: event.id },
       select: { eventId: true, personId: true, id: true },
@@ -186,6 +190,8 @@ export const getEventDetail = async (
     return {
       ...event,
       person_absences: formated,
+      totalCertificate,
+      totalPerson: totalUniquePersonAbsence.length,
       totalPage: Math.ceil(totalUniquePersonAbsence.length / limit),
       page,
       limit,
