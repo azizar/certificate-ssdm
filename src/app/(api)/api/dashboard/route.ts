@@ -7,6 +7,7 @@ export const GET = auth(async (req) => {
   const totalPerson = await prisma.person.count();
   const totalCertificate = await prisma.certificate.count();
   const totalEvent = await prisma.event.count();
+  const totalUser = await prisma.user.count();
 
-  return NextResponse.json({ totalPerson, totalCertificate, totalEvent });
+  return NextResponse.json({ totalPerson, totalCertificate, totalEvent, totalUser });
 });

@@ -7,12 +7,16 @@ import {
   MdCalendarToday,
   MdDashboard,
   MdPerson,
+  MdVerifiedUser,
 } from 'react-icons/md';
 
 import TaskCard from 'components/admin/default/TaskCard';
 import Widget from 'components/widget/Widget';
 import { useQuery } from 'react-query';
 import axios from 'axios';
+import { BiSolidUser } from 'react-icons/bi';
+import { FaRegUser } from 'react-icons/fa';
+import { FaBuildingUser } from 'react-icons/fa6';
 
 const Dashboard = () => {
   const { data } = useQuery({
@@ -30,7 +34,7 @@ const Dashboard = () => {
 
       <div className="mt-3 grid grid-cols-1 gap-5 md:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-3 3xl:grid-cols-6">
         <Widget
-          icon={<MdPerson className="h-7 w-7" />}
+          icon={<FaRegUser className="h-7 w-7" />}
           title={'Persons'}
           subtitle={result?.totalPerson ?? '0'}
         />
@@ -43,6 +47,11 @@ const Dashboard = () => {
           icon={<MdCalendarToday className="h-7 w-7" />}
           title={'Event'}
           subtitle={result?.totalEvent ?? '0'}
+        />
+        <Widget
+          icon={<FaBuildingUser className="h-7 w-7" />}
+          title={'User'}
+          subtitle={result?.totalUser ?? '0'}
         />
         {/*<Widget*/}
         {/*  icon={<MdDashboard className="h-6 w-6" />}*/}

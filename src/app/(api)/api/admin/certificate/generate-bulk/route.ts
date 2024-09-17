@@ -28,14 +28,20 @@ export const POST = auth(async function (req) {
   const payload = [];
 
   const persons = event.person_absences;
+  let delay = 60000;
+  for (let i = 0; i < persons.length; i++) {
+    const person = persons[i].person;
 
-  for (const data of persons) {
-    const person = data.person;
+    const mod = i % 50;
+    if (mod === 0) {
+      delay += 60000;
+    }
 
     const opts: BulkJobOptions = {
-      delay: 1000,
+      delay,
       removeOnFail: false,
-      // jobId: `${event.qr_code}-${person.id}`,
+      removeOnComplete: false,
+      debounce: { id: 'deb-' + i, ttl: 5000 },
     };
 
     const queue = {
@@ -50,6 +56,27 @@ export const POST = auth(async function (req) {
 
     payload.push(queue);
   }
+
+  // for (const data of persons) {
+  //   const person = data.person;
+  //
+  //   const opts: BulkJobOptions = {
+  //     delay: 1000,
+  //     removeOnFail: false,
+  //   };
+  //
+  //   const queue = {
+  //     name: 'Generating Certificate ' + event.name + ' to: ' + person.name,
+  //     data: {
+  //       event: { ...event, person_absences: undefined },
+  //       person,
+  //       force_create: true,
+  //     },
+  //     opts,
+  //   };
+  //
+  //   payload.push(queue);
+  // }
 
   await generateCertQueue.addBulk(payload);
 
