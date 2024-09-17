@@ -13,6 +13,7 @@ import { MdWarning } from 'react-icons/md';
 import { useMutation } from 'react-query';
 import { useSession } from 'next-auth/react';
 import Link from 'next/link';
+import axios from 'axios';
 
 function EventRegister({ event }: { event: Event }) {
   const session = useSession();
@@ -39,7 +40,7 @@ function EventRegister({ event }: { event: Event }) {
   const registerMutation = useMutation({
     mutationKey: ['register-event'],
     mutationFn: async (data: any) => {
-      return await personRegisterEvent(data);
+      return axios.post('/api/event/register',data)
     },
   });
 
