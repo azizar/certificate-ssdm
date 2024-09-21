@@ -1,7 +1,9 @@
 import React, { ReactNode } from 'react';
 import AppWrappers from './AppWrappers';
+import { ToastProvider } from '@radix-ui/react-toast';
 // import '@asseinfo/react-kanban/dist/styles.css';
 // import '/public/styles/Plugins.css';
+import 'react-toastify/dist/ReactToastify.css';
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
@@ -18,7 +20,9 @@ export default function RootLayout({ children }: { children: ReactNode }) {
       <meta name="viewport" content="width=device-width, initial-scale=1" />
       <meta name="theme-color" content="#000000" />
       <body id={'root'}>
-        <AppWrappers>{children}</AppWrappers>
+        <AppWrappers>
+          {children}
+        </AppWrappers>
       </body>
     </html>
   );
