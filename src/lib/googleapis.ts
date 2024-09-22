@@ -174,10 +174,18 @@ export default class GoogleApis {
         },
       });
 
-      const finds = '{person}';
-      const replaces = this.person.name;
+      const finds = ['{person}', '{id}'];
 
-      await this.findAndReplaceTextInDoc(auth, fileId, finds, replaces);
+      const personId = this.person.id.toString().padStart(5, '0');
+
+      const replaces = [this.person.name.toUpperCase(), personId];
+
+      const findReplace = await this.findAndReplaceTextInDoc(
+        auth,
+        fileId,
+        finds,
+        replaces,
+      );
 
       const response = await drive.files.export(
         {
@@ -392,6 +400,8 @@ export default class GoogleApis {
           },
         });
       }
+
+      // console.dir(requests, { depth: null });
 
       return docs.documents.batchUpdate({
         documentId,

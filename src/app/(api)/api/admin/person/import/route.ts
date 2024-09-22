@@ -1,11 +1,11 @@
 import { NextResponse } from 'next/server';
-import path from 'path';
 import fs from 'node:fs';
+import path from 'node:path';
 import { auth } from '../../../../../../auth';
 
 import prisma from '../../../../../../lib/prisma';
 
-export const GET = auth(async (req) => {
+export const POST = auth(async (req) => {
   const location = path.resolve(path.join(process.cwd(), 'data_absensi.json'));
 
   const data = fs.readFileSync(location, 'utf8');
@@ -31,10 +31,11 @@ export const GET = auth(async (req) => {
           email: payload.email,
         },
       });
-      results.push({id: pers.id, name: pers.name});
+      results.push({ id: pers.id, name: pers.name });
     } catch (error) {
       console.log(error, payload.full_name);
-      errors.push(payload)
+      errors.push(payload);
+      // biome-ignore lint/correctness/noUnnecessaryContinue: <explanation>
       continue;
     }
     // const upsert = await prisma.person.upsert({
@@ -64,8 +65,8 @@ export const GET = auth(async (req) => {
   //   skipDuplicates: true
   // })
 
-  console.log('Inserted', results.length);
-  console.log("Error:", errors.length);
+  console.log('Inserted Person :', results.length);
+  console.log('Error:', errors.length);
 
   return NextResponse.json({ results });
 });

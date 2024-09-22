@@ -1,45 +1,33 @@
 'use client';
 import {
-  Avatar,
   Button,
   List,
   ListItem,
-  ListItemPrefix,
   ListItemSuffix,
   Typography,
 } from '@material-tailwind/react';
-import { generateCertificate, getEventDetail } from 'actions/event';
+import { getEventDetail } from 'actions/event';
 import Card from 'components/card';
-import CardMenu from 'components/card/CardMenu';
-import { useRouter } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { FiLoader } from 'react-icons/fi';
-import {
-  MdCalendarToday,
-  MdGeneratingTokens,
-  MdNavigateBefore,
-  MdNavigateNext,
-  MdPerson,
-} from 'react-icons/md';
+import { MdNavigateBefore, MdNavigateNext, MdPerson } from 'react-icons/md';
 import { useMutation, useQuery } from 'react-query';
 import { FormEvent } from '../../form-event';
 
-import {
-  FaGenderless,
-  FaRegCircleCheck,
-  FaRegCircleXmark,
-  FaX,
-} from 'react-icons/fa6';
-import DownloadProgress from '../../../../../components/button-downloader';
-import { FaSync } from 'react-icons/fa';
-import { usePagination } from '../../../../../hooks/use-pagination';
-import { useEffect } from 'react';
-import GenerateCertificate from './components/generate-certificate';
 import axios from 'axios';
-import Widget from '../../../../../components/widget/Widget';
+import Link from 'next/link';
+import { useEffect } from 'react';
+import { FaSync } from 'react-icons/fa';
+import { FaRegCircleCheck, FaRegCircleXmark } from 'react-icons/fa6';
 import { IoDocuments } from 'react-icons/io5';
+import Widget from '../../../../../components/widget/Widget';
+import { usePagination } from '../../../../../hooks/use-pagination';
+import GenerateCertificate from './components/generate-certificate';
 
 const EventDetailsPage = ({ params }: { params: { id: string } }) => {
   const router = useRouter();
+  const pathname = usePathname();
+
   const { page, limit, skip, onPaginationChange } = usePagination();
   const { data, error, isFetching, refetch } = useQuery({
     queryKey: ['event-detail', params, limit, page],
@@ -48,6 +36,7 @@ const EventDetailsPage = ({ params }: { params: { id: string } }) => {
     },
   });
 
+  // biome-ignore lint/correctness/useExhaustiveDependencies: <explanation>
   useEffect(() => {
     refetch();
   }, [page]);
@@ -100,16 +89,16 @@ const EventDetailsPage = ({ params }: { params: { id: string } }) => {
         </div>
         <div className="col-span-2">
           <Card extra={'w-full h-full px-6 pb-6 sm:overflow-x-auto'}>
-            <div className="mt-6 grid grid-cols-1 gap-5 md:grid-cols-2 rounded-lg">
+            <div className="mt-6 grid grid-cols-1 gap-5 rounded-lg md:grid-cols-2">
               <Widget
                 icon={<MdPerson className="h-7 w-7" />}
                 title={'Persons'}
-                subtitle={data?.totalPerson + '' ?? '0'}
+                subtitle={`${data?.totalPerson}` ?? '0'}
               />
               <Widget
                 icon={<IoDocuments className="h-6 w-6" />}
                 title={'Certificate'}
-                subtitle={data?.totalCertificate + '' ?? '0'}
+                subtitle={`${data?.totalCertificate}` ?? '0'}
               />
               {/*<Widget*/}
               {/*  icon={<MdCalendarToday className="h-7 w-7" />}*/}
@@ -117,17 +106,19 @@ const EventDetailsPage = ({ params }: { params: { id: string } }) => {
               {/*  subtitle={data?.totalEvent ?? '0'}*/}
               {/*/>*/}
             </div>
-            <div className={'w-full border-b'}></div>
+
             <GenerateCertificate event={data} />
           </Card>
         </div>
       </div>
-      <Card extra={'w-full h-full px-6 pb-6 sm:overflow-x-auto'}>
+      <Card extra={'w-full h-full px-6 pb-6 sm:overflow-x-auto space-y-2'}>
         <div className="relative flex items-center justify-between pt-4">
           <div className="text-xl font-bold text-navy-700 dark:text-white">
             Person Absence
           </div>
-          <CardMenu />
+          <Link href={`${pathname}/add-bulk`}>
+            <Button className="max-w-sm">Add Bulk Absence</Button>
+          </Link>
         </div>
         <div className="w-full">
           <EventAbsence data={data.person_absences ?? []} />
@@ -187,7 +178,7 @@ interface Person {
 }
 
 const EventAbsence = ({ data }: { data: IAbsenceData[] }) => {
-  let generateCertificateMutation = useMutation({
+  const generateCertificateMutation = useMutation({
     mutationKey: ['generateCertificate'],
     mutationFn: async ({
       eventId,
@@ -206,7 +197,7 @@ const EventAbsence = ({ data }: { data: IAbsenceData[] }) => {
     <List>
       {data.length >= 1 &&
         data.map((data, i) => (
-          <ListItem key={i}>
+          <ListItem key={data.id}>
             <div className="w-full">
               <div className={'flex items-center justify-between'}>
                 <div>

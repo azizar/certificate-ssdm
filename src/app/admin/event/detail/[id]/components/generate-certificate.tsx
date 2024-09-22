@@ -1,10 +1,10 @@
 'use client';
-import React, { useCallback } from 'react';
+import React from 'react';
 
+import type { Event } from '.prisma/client';
 import { Alert, Button, Typography } from '@material-tailwind/react';
-import { FiLoader } from 'react-icons/fi';
 import axios from 'axios';
-import { Event } from '.prisma/client';
+import { FiLoader } from 'react-icons/fi';
 
 const GenerateCertificate = ({ event }: { event: Event }) => {
   const [loading, setLoading] = React.useState(false);
@@ -34,6 +34,7 @@ const GenerateCertificate = ({ event }: { event: Event }) => {
           </Typography>
         </>
       )}
+      {/* biome-ignore lint/complexity/useLiteralKeys: <explanation> */}
       {event['certificates']?.length > 0 && (
         <Alert>Total Certificate of this event : 50</Alert>
       )}

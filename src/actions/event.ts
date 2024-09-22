@@ -1,13 +1,13 @@
 'use server';
-import { mkdirSync, writeFileSync } from 'fs';
-import { Event, EventRegister, EventSchema } from 'lib/schema/event';
-import { join, resolve } from 'path';
-import { generateRandomString } from 'utils';
-import prisma from 'lib/prisma';
+import type { BulkJobOptions } from 'bullmq';
 import { eachDayOfInterval } from 'date-fns';
+import prisma from 'lib/prisma';
+import { EventSchema, type Event, type EventRegister } from 'lib/schema/event';
+import { mkdirSync, writeFileSync } from 'node:fs';
+import { join, resolve } from 'node:path';
+import { generateRandomString } from 'utils';
 import { auth, signOut } from '../auth';
 import { generateCertQueue } from '../worker/generate-certificate.worker';
-import { BulkJobOptions } from 'bullmq';
 
 export const createEvent = async (formData: FormData) => {
   const rawFormData = Object.fromEntries(formData);
@@ -180,7 +180,9 @@ export const getEventDetail = async (
           });
         });
 
+        // biome-ignore lint/performance/noDelete: <explanation>
         delete absence.absenceDate;
+        // biome-ignore lint/performance/noDelete: <explanation>
         delete absence.id;
 
         return { id: absence.personId, ...absence, absences: data };
