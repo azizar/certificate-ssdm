@@ -2,9 +2,8 @@ import { NextResponse } from 'next/server';
 import * as xlsx from 'xlsx';
 import { auth } from '../../../../../../auth';
 
-import prisma from '../../../../../../lib/prisma';
-import { Person } from '.prisma/client';
 import { checkAdmin } from '../../../../../../lib/check-admin';
+import prisma from '../../../../../../lib/prisma';
 
 export const POST = auth(async (req) => {
   const admin = await checkAdmin(req.auth);
@@ -134,13 +133,13 @@ const processImportAbsence = async (
   const results = [];
   const errors = [];
   const bulkPayload = [];
-  const personIds=[]
+  const personIds = [];
   for (const payload of persons) {
     try {
       const pers = await prisma.person.upsert({
-        where: { email: payload.email, identifier: payload.email },
+        where: { email: payload.email },
         update: {
-          name: payload.full_name,
+          name: `${payload?.pangkat} ${payload.full_name}`,
         },
         create: {
           name: `${payload?.pangkat} ${payload.full_name}`,
